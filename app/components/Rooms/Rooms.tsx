@@ -6,23 +6,54 @@ import { rooms } from "./constants/constants";
 
 export default function Rooms() {
   return (
-    <div className="relative w-full min-h-screen py-16 px-4 md:px-16 bg-gray-100">
-      {/* Título */}
-      <div className="max-w-6xl mx-auto mb-8 text-center md:text-left">
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800">
-          Salas Disponíveis
-        </h1>
-        <p className="text-gray-600 mt-2 text-sm md:text-base">
-          Confira as salas e faça suas reservas
-        </p>
+    <div className="w-full min-h-screen">
+
+      <div className="relative h-[50vh] w-full flex items-center justify-center overflow-hidden px-4 md:px-16">
+        
+        <div className="absolute inset-0 bg-linear-to-r from-blue-900 to-teal-300"></div>
+
+        {/* 👇 ajuste aqui */}
+        <div className="relative z-10 w-full max-w-4xl mx-auto translate-y-12">
+          
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white text-center mb-6">
+            Salas Disponíveis
+          </h1>
+
+          <div className="bg-white/10 backdrop-blur-md p-4 md:p-6 rounded-xl flex flex-col md:flex-row gap-4">
+            
+            <input
+              type="text"
+              placeholder="Buscar sala..."
+              className="flex-1 px-4 py-2 rounded-lg outline-none bg-white"
+            />
+
+            <input
+              type="date"
+              className="px-4 py-2 rounded-lg outline-none bg-white"
+            />
+
+            <input
+              type="time"
+              className="px-4 py-2 rounded-lg outline-none bg-white"
+            />
+
+            <button className="bg-blue-700 hover:bg-blue-800 text-white px-6 py-2 rounded-lg transition">
+              Buscar
+            </button>
+
+          </div>
+
+        </div>
       </div>
 
-      {/* Grid de salas */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 max-w-6xl mx-auto">
-        {rooms.map((room) => (
-          <RoomCard key={room.id} {...room} />
-        ))}
+      <div className="bg-white py-16 px-4 md:px-16 -mt-12 rounded-t-3xl shadow-lg">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 max-w-6xl mx-auto">
+          {rooms.map((room) => (
+            <RoomCard key={room.id} {...room} />
+          ))}
+        </div>
       </div>
+
     </div>
   );
 }
