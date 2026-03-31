@@ -1,40 +1,45 @@
-import { BsBuilding } from "react-icons/bs";
+export type RoomStatus = "disponivel" | "ocupada" | "reservada";
 
-export const rooms = [
+export const rooms: {
+  id: number;
+  name: string;
+  capacity: number;
+  status: RoomStatus;
+}[] = [
   {
     id: 1,
     name: "Sala 303",
     capacity: 20,
-    available: true
+    status: "disponivel",
   },
   {
     id: 2,
     name: "Sala 304",
     capacity: 15,
-    available: false
+    status: "ocupada",
   },
   {
     id: 3,
     name: "Sala 305",
     capacity: 10,
-    available: true
+    status: "reservada",
   },
   {
     id: 4,
     name: "Sala 306",
     capacity: 25,
-    available: true
+    status: "disponivel",
   },
-    {
+  {
     id: 5,
     name: "Sala 307",
     capacity: 25,
-    available: true
+    status: "disponivel",
   },
-    {
+  {
     id: 6,
     name: "Sala 308",
     capacity: 25,
-    available: false
+    status: "ocupada",
   },
 ];
