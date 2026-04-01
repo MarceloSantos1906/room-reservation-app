@@ -1,6 +1,5 @@
-import Home from "./components/Home/Home";
+import Home from "./home/page";
 import Image from "next/image";
-import Rooms from "./components/Rooms/Rooms";
 
 export default function HomePage() {
   return (

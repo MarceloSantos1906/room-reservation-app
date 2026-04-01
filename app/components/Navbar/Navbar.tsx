@@ -2,10 +2,10 @@
 
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
-import { Navlinks } from "@/app/components/Home/constants/constant";
+import { Navlinks } from "@/app/home/constants/constant";
 import Link from "next/link";
 import { Search, Menu } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 type Props = {
   openNav: () => void;
@@ -13,16 +13,30 @@ type Props = {
 
 export default function Navbar({ openNav }: Props) {
   const [navBg, setNavBg] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
-    const handler = () => {
+    const handleScroll = () => {
       setNavBg(window.scrollY >= 90);
     };
 
-    window.addEventListener("scroll", handler);
-    return () => window.removeEventListener("scroll", handler);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    setIsLoggedIn(!!token);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setIsLoggedIn(false);
+    router.push("/login");
+  };
 
   return (
     <div
@@ -41,7 +55,6 @@ export default function Navbar({ openNav }: Props) {
             priority
           />
         </div>
-
         {pathname === "/" && (
           <div className="flex-1 mx-2 md:mx-4 lg:mx-8 max-w-md">
             <div className="relative w-full">
@@ -57,18 +70,34 @@ export default function Navbar({ openNav }: Props) {
             </div>
           </div>
         )}
-
-        {/* navlinks desktop */}
         <div className="hidden xl:flex items-center space-x-10">
-          {Navlinks.map((link) => (
-            <Link
-              key={link.id}
-              href={link.url}
-              className="text-base text-[#1E3A8A] hover:text-blue-600 font-medium transition-all duration-200"
+          {Navlinks.map((link) => {
+            if (
+              link.url === "/login" &&
+              (isLoggedIn || pathname === "/login")
+            ) {
+              return null;
+            }
+
+            return (
+              <Link
+                key={link.id}
+                href={link.url}
+                className="text-base text-[#1E3A8A] hover:text-blue-600 font-medium transition-all duration-200"
+              >
+                <p>{link.label}</p>
+              </Link>
+            );
+          })}
+
+          {isLoggedIn && (
+            <button
+              onClick={handleLogout}
+              className="text-base text-[#1E3A8A] hover:text-red-500 font-medium transition-all duration-200"
             >
-              <p>{link.label}</p>
-            </Link>
-          ))}
+              Logout
+            </button>
+          )}
         </div>
         <div className="xl:hidden">
           <button

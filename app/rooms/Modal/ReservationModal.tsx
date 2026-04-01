@@ -1,23 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import {
-  User,
-  BookOpen,
-  CalendarDays,
-  Clock3,
-  FileText,
-} from "lucide-react";
+import { User, BookOpen, CalendarDays, Clock3, FileText } from "lucide-react";
 
 type Props = {
   roomName: string;
   onClose: () => void;
 };
 
-export default function ReservationModal({
-  roomName,
-  onClose,
-}: Props) {
+export default function ReservationModal({ roomName, onClose }: Props) {
   const [responsibleName, setResponsibleName] = useState("");
   const [subject, setSubject] = useState("");
   const [date, setDate] = useState("");
@@ -42,9 +33,17 @@ export default function ReservationModal({
     alert("Reserva realizada com sucesso!");
     onClose();
   };
+  const handleBackgroundClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4"
+      onClick={handleBackgroundClick} // <-- captura o clique no fundo
+    >
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6">
         <h2 className="text-2xl font-bold text-[#000000] mb-6 text-center">
           Reservar {roomName}

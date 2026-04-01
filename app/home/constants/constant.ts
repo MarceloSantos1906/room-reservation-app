@@ -1,10 +1,10 @@
 import { BsCalendar, BsPerson, BsBuilding, BsDoorOpen } from "react-icons/bs";
 
 export const Navlinks = [
-  { id: 1, url: "#", label: "Salas" },
-  { id: 2, url: "#", label: "Laboratórios" },
-  { id: 3, url: "#", label: "Reservas" },
-  { id: 4, url: "#", label: "Login" },
+  { id: 1, url: "/rooms", label: "Salas" },
+  { id: 2, url: "/laboratories", label: "Laboratórios" },
+  { id: 3, url: "/reservations", label: "Reservas" },
+  { id: 4, url: "/login", label: "Login" },
 ];
 
 export const features = [
