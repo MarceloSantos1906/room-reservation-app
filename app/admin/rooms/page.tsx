@@ -86,7 +86,6 @@ export default function RoomsForm() {
     if (!validateFields()) return;
 
     try {
-      // 1) cria a sala
       const roomPayload = {
         nome_numero: roomName,
         bloco: block,
@@ -113,7 +112,6 @@ export default function RoomsForm() {
       const createdRoom = await roomResponse.json();
       const roomId = createdRoom.id;
 
-      // 2) associa equipamentos
       for (const equipmentId of equipmentsSelected) {
         await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/api/salas/${roomId}/equipamentos`,

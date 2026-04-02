@@ -1,227 +1,146 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
-import { Home, Users, Monitor, Cpu, Building2 } from "lucide-react";
+import { Laptop, FileText, Save } from "lucide-react";
 
-type RoomType = "sala_aula" | "laboratorio";
-
-type Equipment = {
-  id: string;
-  nome: string;
+type FormErrors = {
+  nome?: string;
+  descricao?: string;
 };
 
-type SelectedEquipment = {
-  equipamento_id: string;
-  quantidade: number;
-};
+export default function EquipmentForm() {
+  const [nome, setNome] = useState("");
+  const [descricao, setDescricao] = useState("");
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [loading, setLoading] = useState(false);
 
-export default function RoomsForm() {
-  const [roomName, setRoomName] = useState("");
-  const [capacity, setCapacity] = useState("");
-  const [type, setType] = useState<RoomType>("sala_aula");
-  const [machines, setMachines] = useState("");
-  const [equipments, setEquipments] = useState<Equipment[]>([]);
-  const [selectedEquipments, setSelectedEquipments] = useState<SelectedEquipment[]>([]);
+  const validateFields = () => {
+    const newErrors: FormErrors = {};
 
-  useEffect(() => {
-    const fetchEquipments = async () => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/equipamentos`);
-      const data = await response.json();
-      setEquipments(data);
-    };
+    if (!nome.trim()) {
+      newErrors.nome = "O nome do equipamento é obrigatório";
+    }
 
-    fetchEquipments();
-  }, []);
+    if (!descricao.trim()) {
+      newErrors.descricao = "A descrição é obrigatória";
+    }
 
-  const toggleEquipment = (id: string) => {
-    setSelectedEquipments((prev) => {
-      const exists = prev.find((item) => item.equipamento_id === id);
-
-      if (exists) {
-        return prev.filter((item) => item.equipamento_id !== id);
-      }
-
-      return [...prev, { equipamento_id: id, quantidade: 1 }];
-    });
-  };
-
-  const updateQuantity = (id: string, quantidade: number) => {
-    setSelectedEquipments((prev) =>
-      prev.map((item) =>
-        item.equipamento_id === id
-          ? { ...item, quantidade: quantidade < 1 ? 1 : quantidade }
-          : item
-      )
-    );
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async () => {
+    if (!validateFields()) return;
+
+    setLoading(true);
+
     try {
-      const roomPayload = {
-        nome_numero: roomName,
-        capacidade: Number(capacity),
-        tipo_sala: type,
-        maquinas: type === "laboratorio" ? Number(machines) : null,
+      const payload = {
+        nome,
+        descricao,
       };
 
-      const roomResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/salas`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(roomPayload),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/equipamentos`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
 
-      if (!roomResponse.ok) {
-        alert("Erro ao cadastrar sala");
+      if (!response.ok) {
+        alert("Erro ao cadastrar equipamento");
         return;
       }
 
-      const createdRoom = await roomResponse.json();
-      const roomId = createdRoom.id;
-
-      await Promise.all(
-        selectedEquipments.map((equipment) =>
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/salas/${roomId}/equipamentos`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(equipment),
-          })
-        )
-      );
-
-      alert("Sala cadastrada com equipamentos!");
-
-      setRoomName("");
-      setCapacity("");
-      setType("sala_aula");
-      setMachines("");
-      setSelectedEquipments([]);
+      alert("Equipamento cadastrado com sucesso!");
+      setNome("");
+      setDescricao("");
+      setErrors({});
     } catch (error) {
-      console.error(error);
-      alert("Erro ao cadastrar sala");
+      console.error("Erro frontend:", error);
+      alert("Erro ao cadastrar equipamento");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen pt-24 bg-linear-to-br from-blue-900 via-blue-700 to-teal-500 flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-2xl bg-white/95 rounded-3xl shadow-2xl p-8">
-        <div className="flex justify-center mb-6">
-          <Image src="/images/unespar.png" alt="Logo" width={110} height={110} priority />
+    <div className="min-h-screen pt-24 bg-linear-to-br from-blue-900 via-blue-700 to-teal-500 flex items-center justify-center px-4 sm:px-6 py-8 sm:py-10">
+      <div className="w-full max-w-2xl bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/30 p-5 sm:p-8">
+        <div className="flex justify-center mb-5 sm:mb-6">
+          <Image
+            src="/images/unespar.png"
+            alt="Logo"
+            width={110}
+            height={110}
+            className="object-contain w-20 sm:w-24 md:w-28 h-auto"
+            priority
+          />
         </div>
 
-        <h1 className="text-3xl font-bold text-center text-[#1E3A8A] mb-8">
-          Cadastro de Sala
-        </h1>
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#1E3A8A]">
+            Cadastro de Equipamento
+          </h1>
+          <p className="text-gray-500 mt-2 text-sm sm:text-base">
+            Cadastre os equipamentos disponíveis para as salas
+          </p>
+        </div>
 
         <div className="space-y-5">
           <div>
             <label className="flex items-center gap-2 mb-2 text-sm font-medium text-gray-700">
-              <Home size={16} /> Nome / Número
+              <Laptop size={16} />
+              Nome do equipamento
             </label>
             <input
-              value={roomName}
-              onChange={(e) => setRoomName(e.target.value)}
-              className="w-full border rounded-xl px-4 py-3"
-              placeholder="Ex: Sala 101"
+              type="text"
+              value={nome}
+              onChange={(e) => {
+                setNome(e.target.value);
+                setErrors((prev) => ({ ...prev, nome: "" }));
+              }}
+              placeholder="Ex: Lousa Digital"
+              className="w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
             />
+            {errors.nome && (
+              <p className="text-red-500 text-sm mt-1">{errors.nome}</p>
+            )}
           </div>
 
           <div>
             <label className="flex items-center gap-2 mb-2 text-sm font-medium text-gray-700">
-              <Users size={16} /> Capacidade
+              <FileText size={16} />
+              Descrição
             </label>
-            <input
-              type="number"
-              value={capacity}
-              onChange={(e) => setCapacity(e.target.value)}
-              className="w-full border rounded-xl px-4 py-3"
-              placeholder="Ex: 30"
+            <textarea
+              value={descricao}
+              onChange={(e) => {
+                setDescricao(e.target.value);
+                setErrors((prev) => ({ ...prev, descricao: "" }));
+              }}
+              placeholder="Ex: Lousa interativa com caneta óptica"
+              rows={4}
+              className="w-full border rounded-xl px-4 py-3 outline-none resize-none focus:ring-2 focus:ring-blue-500"
             />
+            {errors.descricao && (
+              <p className="text-red-500 text-sm mt-1">{errors.descricao}</p>
+            )}
           </div>
-
-          <div>
-            <label className="flex items-center gap-2 mb-2 text-sm font-medium text-gray-700">
-              <Building2 size={16} /> Tipo
-            </label>
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value as RoomType)}
-              className="w-full border rounded-xl px-4 py-3"
-            >
-              <option value="sala_aula">Sala</option>
-              <option value="laboratorio">Laboratório</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="flex items-center gap-2 mb-3 text-sm font-medium text-gray-700">
-              <Monitor size={16} /> Equipamentos
-            </label>
-
-            <div className="space-y-3">
-              {equipments.map((item) => {
-                const selected = selectedEquipments.find(
-                  (eq) => eq.equipamento_id === item.id
-                );
-
-                return (
-                  <div
-                    key={item.id}
-                    className="border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
-                  >
-                    <label className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={!!selected}
-                        onChange={() => toggleEquipment(item.id)}
-                        className="accent-blue-600"
-                      />
-                      <span>{item.nome}</span>
-                    </label>
-
-                    {selected && (
-                      <input
-                        type="number"
-                        min={1}
-                        value={selected.quantidade}
-                        onChange={(e) =>
-                          updateQuantity(item.id, Number(e.target.value))
-                        }
-                        className="w-full sm:w-28 border rounded-lg px-3 py-2"
-                        placeholder="Qtd"
-                      />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {type === "laboratorio" && (
-            <div>
-              <label className="flex items-center gap-2 mb-2 text-sm font-medium text-gray-700">
-                <Cpu size={16} /> Quantidade de PCs
-              </label>
-              <input
-                type="number"
-                value={machines}
-                onChange={(e) => setMachines(e.target.value)}
-                className="w-full border rounded-xl px-4 py-3"
-                placeholder="Ex: 20"
-              />
-            </div>
-          )}
 
           <button
             type="button"
             onClick={handleSubmit}
-            className="w-full bg-blue-700 hover:bg-blue-800 text-white py-3 rounded-xl font-semibold"
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-2 bg-blue-700 hover:bg-blue-800 disabled:opacity-70 text-white py-3 rounded-xl transition font-semibold shadow-lg"
           >
-            Cadastrar Sala
+            <Save size={18} />
+            {loading ? "Cadastrando..." : "Cadastrar Equipamento"}
           </button>
         </div>
       </div>
