@@ -1,9 +1,11 @@
-export type Room = {
+ export type Equipment = {
   id: string;
-  name: string;
-  roomType: string;
-  equipment: string;
-  machines: string;
-  capacity: number;
-  status: "disponivel" | "ocupada" | "reservada";
+  nome: string;
+};
+
+export type FormErrors = {
+  roomName?: string;
+  block?: string;
+  capacity?: string;
+  type?: string;
 };
