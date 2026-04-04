@@ -1,15 +1,15 @@
 "use client";
 
 import React from "react";
-import { Users } from "lucide-react";
+import { Users, Eye } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 type RoomProps = {
-  id: string; 
+  id: string;
   name: string;
   capacity: number;
   status: "disponivel" | "ocupada" | "reservada";
-  onReserve: (roomName: string) => void;
+  onReserve: (roomId: string) => void;
 };
 
 export default function RoomCard({
@@ -34,17 +34,21 @@ export default function RoomCard({
   };
 
   const handleViewDetails = () => {
-    router.push(`/rooms/${id}`); 
+    router.push(`/rooms/${id}`);
   };
 
   return (
-    <div className="rounded-xl shadow-md overflow-hidden bg-white">
+    <div className="rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden bg-white border border-gray-100">
       <div className="p-6 flex flex-col items-start text-left">
-        <h3 className="text-lg md:text-xl font-bold text-[#000000]">{name}</h3>
+        <h3 className="text-lg md:text-xl font-bold text-black">
+          {name}
+        </h3>
 
-        <div className="flex items-center gap-2 mt-6 text-[#000000]">
+        <div className="flex items-center gap-2 mt-5 text-black">
           <Users size={18} />
-          <p className="text-sm md:text-base">Capacidade: {capacity} pessoas</p>
+          <p className="text-sm md:text-base">
+            Capacidade: {capacity} pessoas
+          </p>
         </div>
 
         <div className="w-full border-t border-gray-200 my-4"></div>
@@ -55,11 +59,11 @@ export default function RoomCard({
           {statusLabel[status]}
         </span>
 
-        <div className="flex flex-wrap gap-3 mt-5">
+        <div className="flex gap-3 mt-5">
           {status === "disponivel" && (
             <button
-              onClick={() => onReserve(name)}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl text-sm transition"
+              onClick={() => onReserve(id)}
+              className="min-w-30 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition"
             >
               Reservar
             </button>
@@ -67,8 +71,9 @@ export default function RoomCard({
 
           <button
             onClick={handleViewDetails}
-            className="bg-blue-500 border text-white hover:bg-blue-600 px-4 py-2 rounded-xl text-sm transition"
+            className="min-w-30 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition"
           >
+            <Eye size={16} />
             Ver detalhes
           </button>
         </div>

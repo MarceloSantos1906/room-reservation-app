@@ -20,7 +20,7 @@ export default function Rooms() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [allRooms, setAllRooms] = useState<Room[]>([]);
   const [reservations, setReservations] = useState<any[]>([]);
-  const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
+  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [search, setSearch] = useState("");
@@ -34,7 +34,8 @@ export default function Rooms() {
     setIsAdmin(userType === "admin_cpd");
   }, []);
 
-  const handleReserve = (roomName: string) => {
+  // ✅ AGORA RECEBE O ID
+  const handleReserve = (roomId: string) => {
     const userType = localStorage.getItem("userType");
 
     if (!userType) {
@@ -42,7 +43,7 @@ export default function Rooms() {
       return;
     }
 
-    setSelectedRoom(roomName);
+    setSelectedRoomId(roomId);
   };
 
   useEffect(() => {
@@ -147,6 +148,7 @@ export default function Rooms() {
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white text-center mb-6">
             Salas Disponíveis
           </h1>
+
           <div className="bg-white/10 backdrop-blur-md p-4 md:p-6 rounded-xl flex flex-col md:flex-row md:flex-wrap gap-3 md:gap-4 items-center w-full">
             <input
               type="text"
@@ -188,6 +190,7 @@ export default function Rooms() {
           </div>
         </div>
       </div>
+
       <div className="bg-white py-16 px-4 md:px-16 -mt-12 rounded-t-3xl shadow-lg">
         <div className="flex justify-center mb-10">
           <div className="inline-flex bg-gray-100 p-1.5 rounded-2xl shadow-inner border border-gray-200">
@@ -228,6 +231,7 @@ export default function Rooms() {
             </button>
           </div>
         </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {filteredRooms.map((room) => (
             <RoomCard
@@ -242,10 +246,10 @@ export default function Rooms() {
         </div>
       </div>
 
-      {selectedRoom && (
+      {selectedRoomId && (
         <ReservationModal
-          roomName={selectedRoom}
-          onClose={() => setSelectedRoom(null)}
+          roomId={selectedRoomId}
+          onClose={() => setSelectedRoomId(null)}
         />
       )}
 

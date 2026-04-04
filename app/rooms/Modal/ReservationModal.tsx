@@ -1,39 +1,79 @@
 "use client";
 
 import { useState } from "react";
-import { User, BookOpen, CalendarDays, Clock3, FileText } from "lucide-react";
+import {
+  CalendarDays,
+  Clock3,
+  FileText,
+  BookOpen,
+} from "lucide-react";
 
 type Props = {
-  roomName: string;
+  roomId: string;
   onClose: () => void;
 };
 
-export default function ReservationModal({ roomName, onClose }: Props) {
-  const [responsibleName, setResponsibleName] = useState("");
+export default function ReservationModal({
+  roomId,
+  onClose,
+}: Props) {
   const [subject, setSubject] = useState("");
   const [date, setDate] = useState("");
-  const [startTime, setStartTime] = useState("");
+  const [turno, setTurno] = useState("matutino");
+  const [lessonNumber, setLessonNumber] = useState(1);
   const [observation, setObservation] = useState("");
 
-  const handleSubmit = () => {
-    if (!responsibleName || !subject || !date || !startTime) {
-      alert("Preencha todos os campos obrigatórios!");
+  const handleSubmit = async () => {
+    if (!subject || !date) {
+      alert("Preencha os campos obrigatórios!");
       return;
     }
 
-    console.log({
-      roomName,
-      responsibleName,
-      subject,
-      date,
-      startTime,
-      observation,
-    });
+    try {
+      const usuarioId = localStorage.getItem("userId");
 
-    alert("Reserva realizada com sucesso!");
-    onClose();
+      if (!usuarioId) {
+        alert("Usuário não encontrado.");
+        return;
+      }
+
+      const payload = {
+        sala_id: roomId,
+        usuario_id: usuarioId,
+        criado_por: usuarioId,
+        data: date,
+        turno,
+        aula_numero: lessonNumber,
+        motivo: `${subject}${observation ? " - " + observation : ""}`,
+      };
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/reservas`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Erro ao reservar sala");
+      }
+
+      alert("Reserva realizada com sucesso!");
+      onClose();
+      window.location.reload();
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao realizar reserva");
+    }
   };
-  const handleBackgroundClick = (e: React.MouseEvent<HTMLDivElement>) => {
+
+  const handleBackgroundClick = (
+    e: React.MouseEvent<HTMLDivElement>
+  ) => {
     if (e.target === e.currentTarget) {
       onClose();
     }
@@ -42,28 +82,16 @@ export default function ReservationModal({ roomName, onClose }: Props) {
   return (
     <div
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4"
-      onClick={handleBackgroundClick} // <-- captura o clique no fundo
+      onClick={handleBackgroundClick}
     >
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6">
-        <h2 className="text-2xl font-bold text-[#000000] mb-6 text-center">
-          Reservar {roomName}
+        <h2 className="text-2xl font-bold text-black mb-6 text-center">
+          Reservar Sala
         </h2>
 
         <div className="space-y-4">
           <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-[#000000] mb-2">
-              <User size={16} />
-              Nome do responsável
-            </label>
-            <input
-              type="text"
-              value={responsibleName}
-              onChange={(e) => setResponsibleName(e.target.value)}
-              className="w-full border rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-[#000000] mb-2">
+            <label className="flex items-center gap-2 text-sm font-medium text-black mb-2">
               <BookOpen size={16} />
               Disciplina
             </label>
@@ -74,37 +102,56 @@ export default function ReservationModal({ roomName, onClose }: Props) {
               className="w-full border rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-[#000000] mb-2">
-                <CalendarDays size={16} />
-                Data
-              </label>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="w-full border rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
 
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-[#000000] mb-2">
-                <Clock3 size={16} />
-                Hora de início
-              </label>
-              <input
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                className="w-full border rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
           <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-[#000000] mb-2">
+            <label className="flex items-center gap-2 text-sm font-medium text-black mb-2">
+              <CalendarDays size={16} />
+              Data
+            </label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full border rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium text-black mb-2">
+              <Clock3 size={16} />
+              Turno
+            </label>
+            <select
+              value={turno}
+              onChange={(e) => setTurno(e.target.value)}
+              className="w-full border rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="matutino">Matutino</option>
+              <option value="vespertino">Vespertino</option>
+              <option value="noturno">Noturno</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-black mb-2 block">
+              Aula número
+            </label>
+            <input
+              type="number"
+              min={1}
+              max={6}
+              value={lessonNumber}
+              onChange={(e) =>
+                setLessonNumber(Number(e.target.value))
+              }
+              className="w-full border rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium text-black mb-2">
               <FileText size={16} />
-              Observação (opcional)
+              Observação
             </label>
             <textarea
               value={observation}
@@ -113,6 +160,7 @@ export default function ReservationModal({ roomName, onClose }: Props) {
               rows={4}
             />
           </div>
+
           <div className="flex gap-3 pt-2">
             <button
               onClick={handleSubmit}
