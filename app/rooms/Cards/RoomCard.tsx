@@ -22,9 +22,9 @@ export default function RoomCard({
   const router = useRouter();
 
   const statusStyles = {
-    disponivel: "bg-[#008000] text-white",
-    ocupada: "bg-[#EF4444] text-white",
-    reservada: "bg-[#EAB308] text-white",
+    disponivel: "bg-green-500 text-white",
+    ocupada: "bg-red-500 text-white",
+    reservada: "bg-yellow-500 text-white",
   };
 
   const statusLabel = {
@@ -59,7 +59,7 @@ export default function RoomCard({
           {status === "disponivel" && (
             <button
               onClick={() => onReserve(name)}
-              className="bg-[#008000] hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition"
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl text-sm transition"
             >
               Reservar
             </button>
@@ -67,7 +67,7 @@ export default function RoomCard({
 
           <button
             onClick={handleViewDetails}
-            className="bg-[#2563EB] border border-[#1E3A8A] text-white hover:bg-blue-700 px-4 py-2 rounded-lg text-sm transition"
+            className="bg-blue-500 border text-white hover:bg-blue-600 px-4 py-2 rounded-xl text-sm transition"
           >
             Ver detalhes
           </button>
