@@ -4,7 +4,7 @@ import Image from "next/image";
 
 export default function IntroSection() {
   return (
-    <div className="relative h-[80vh] w-full flex items-center justify-center overflow-hidden px-4 md:px-16">
+    <div className="relative h-[70vh] w-full flex items-center justify-center overflow-hidden px-4 md:px-16">
       <div className="absolute inset-0 bg-linear-to-r from-blue-800 via-teal-400 to-teal-500"></div>
 
       <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 md:gap-12">

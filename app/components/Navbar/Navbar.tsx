@@ -4,43 +4,34 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Search, Menu, X } from "lucide-react";
-import MobileNav from "./MobileNavbar"; 
+import MobileNav from "./MobileNavbar";
 import { Navlinks } from "@/app/home/constants/constant";
 import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Navbar() {
   const [navBg, setNavBg] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   const pathname = usePathname();
   const router = useRouter();
+  const { user, logout } = useAuth();
+
+  const isLoggedIn = !!user;
+  const isAdmin = user?.tipo === "admin_cpd";
 
   useEffect(() => {
     setMounted(true);
-
     const handleScroll = () => setNavBg(window.scrollY >= 90);
-
-    const updateLoginState = () => {
-      const token = localStorage.getItem("token");
-      const userType = localStorage.getItem("userType");
-      setIsLoggedIn(!!token);
-      setIsAdmin(userType === "admin_cpd");
-    };
-
-    updateLoginState();
     window.addEventListener("scroll", handleScroll);
 
     return () => window.removeEventListener("scroll", handleScroll);
   }, [pathname]);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("userType");
-    setIsLoggedIn(false);
+    logout();
     router.replace("/login");
   };
 
@@ -83,7 +74,6 @@ export default function Navbar() {
               </div>
             </div>
           )}
-
           <div className="hidden xl:flex items-center space-x-6 md:space-x-10">
             <Link
               href="/"
@@ -109,10 +99,10 @@ export default function Navbar() {
               );
             })}
 
-            {isAdmin && (
+            {isAdmin && pathname !== "/admin" && (
               <Link
                 href="/admin"
-                className=" px-3 py-1 rounded text-[#1E3A8A] hover:text-blue-600 font-medium transition"
+                className="text-base font-medium text-[#1E3A8A] hover:text-blue-600 transition-all duration-200"
               >
                 Painel Administrativo
               </Link>
@@ -137,6 +127,7 @@ export default function Navbar() {
           </div>
         </div>
       </nav>
+
       <MobileNav
         showNav={mobileMenuOpen}
         closeNav={() => setMobileMenuOpen(false)}
@@ -144,7 +135,8 @@ export default function Navbar() {
         isAdmin={isAdmin}
         handleLogout={handleLogout}
       />
-      <div className="h-20" /> 
+
+      <div className="h-20" />
     </>
   );
 }

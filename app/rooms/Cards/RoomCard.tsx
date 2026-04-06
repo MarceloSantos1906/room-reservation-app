@@ -1,15 +1,15 @@
 "use client";
 
 import React from "react";
-import { Users } from "lucide-react";
+import { Users, Building2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 type RoomProps = {
-  id: string; 
+  id: string;
   name: string;
   capacity: number;
   status: "disponivel" | "ocupada" | "reservada";
-  onReserve: (roomName: string) => void;
+  onReserve: (roomId: string) => void;
 };
 
 export default function RoomCard({
@@ -22,9 +22,9 @@ export default function RoomCard({
   const router = useRouter();
 
   const statusStyles = {
-    disponivel: "bg-[#008000] text-white",
-    ocupada: "bg-[#EF4444] text-white",
-    reservada: "bg-[#EAB308] text-white",
+    disponivel: "bg-green-500 text-white",
+    ocupada: "bg-red-500 text-white",
+    reservada: "bg-yellow-500 text-white",
   };
 
   const statusLabel = {
@@ -34,44 +34,49 @@ export default function RoomCard({
   };
 
   const handleViewDetails = () => {
-    router.push(`/rooms/${id}`); 
+    router.push(`/rooms/${id}`);
   };
 
   return (
-    <div className="rounded-xl shadow-md overflow-hidden bg-white">
-      <div className="p-6 flex flex-col items-start text-left">
-        <h3 className="text-lg md:text-xl font-bold text-[#000000]">{name}</h3>
-
-        <div className="flex items-center gap-2 mt-6 text-[#000000]">
-          <Users size={18} />
-          <p className="text-sm md:text-base">Capacidade: {capacity} pessoas</p>
-        </div>
-
-        <div className="w-full border-t border-gray-200 my-4"></div>
-
-        <span
-          className={`px-3 py-1 rounded-full text-xs font-semibold ${statusStyles[status]}`}
-        >
+    <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6 hover:shadow-xl hover:scale-105 transition-transform ease-in-out duration-300 cursor-pointer flex flex-col justify-between">
+      
+      {/* Cabeçalho */}
+      <div className="flex justify-between items-start mb-4">
+        <h2 className="text-xl font-bold text-black">{name}</h2>
+        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusStyles[status]}`}>
           {statusLabel[status]}
         </span>
+      </div>
 
-        <div className="flex flex-wrap gap-3 mt-5">
-          {status === "disponivel" && (
-            <button
-              onClick={() => onReserve(name)}
-              className="bg-[#008000] hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition"
-            >
-              Reservar
-            </button>
-          )}
+      {/* Informações */}
+      <div className="space-y-3 text-black">
+        <p className="flex items-center gap-2">
+          <Users size={18} className="text-green-600" />
+          <strong>Capacidade:</strong> {capacity} pessoas
+        </p>
+        <p className="flex items-center gap-2">
+          <Building2 size={18} className="text-blue-600" />
+          <strong>Tipo de sala:</strong> {status === "disponivel" ? "Aula" : statusLabel[status]}
+        </p>
+      </div>
 
+      {/* Botões */}
+      <div className={`flex gap-3 mt-6 ${status === "disponivel" ? "" : "justify-center"}`}>
+        {status === "disponivel" && (
           <button
-            onClick={handleViewDetails}
-            className="bg-[#2563EB] border border-[#1E3A8A] text-white hover:bg-blue-700 px-4 py-2 rounded-lg text-sm transition"
+            onClick={() => onReserve(id)}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl font-medium text-sm transition flex-1"
           >
-            Ver detalhes
+            Reservar
           </button>
-        </div>
+        )}
+
+        <button
+          onClick={handleViewDetails}
+          className={`bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl font-medium text-sm transition ${status !== "disponivel" ? "w-1/2 text-center" : "flex-1"}`}
+        >
+          Ver detalhes
+        </button>
       </div>
     </div>
   );
