@@ -5,6 +5,8 @@ import { LayoutGrid, GraduationCap, Laptop } from "lucide-react";
 import RoomCard from "./Cards/RoomCard";
 import ReservationModal from "./Modal/ReservationModal";
 import CreateRoomModal from "./Modal/CreateRoomModal";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 type Room = {
   id: string;
@@ -26,8 +28,7 @@ export default function Rooms() {
   const [search, setSearch] = useState("");
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
-  const [roomFilter, setRoomFilter] =
-    useState<RoomFilter>("todos");
+  const [roomFilter, setRoomFilter] = useState<RoomFilter>("todos");
 
   useEffect(() => {
     const userType = localStorage.getItem("userType");
@@ -36,23 +37,20 @@ export default function Rooms() {
 
   const handleReserve = (roomId: string) => {
     const userType = localStorage.getItem("userType");
-
     if (!userType) {
-      alert("Você precisa estar logado para fazer uma reserva.");
+      toast.info("Você precisa estar logado para fazer uma reserva.");
       return;
     }
-
     setSelectedRoomId(roomId);
   };
 
   useEffect(() => {
     const fetchRooms = async () => {
       try {
-        const [roomsResponse, reservationsResponse] =
-          await Promise.all([
-            fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/salas`),
-            fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reservas`),
-          ]);
+        const [roomsResponse, reservationsResponse] = await Promise.all([
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/salas`),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reservas`),
+        ]);
 
         const roomsData = await roomsResponse.json();
         const reservationsData = await reservationsResponse.json();
@@ -62,8 +60,7 @@ export default function Rooms() {
         const formattedRooms: Room[] = roomsData.map((room: any) => {
           const hasActiveReservation = reservationsData.some(
             (reservation: any) =>
-              reservation.sala_id === room.id &&
-              reservation.status === "ativa"
+              reservation.sala_id === room.id && reservation.status === "ativa"
           );
 
           const status: Room["status"] = hasActiveReservation
@@ -94,170 +91,156 @@ export default function Rooms() {
       .map((room) => {
         const roomReservations = reservations.filter(
           (reservation) =>
-            reservation.sala_id === room.id &&
-            reservation.status === "ativa"
+            reservation.sala_id === room.id && reservation.status === "ativa"
         );
 
         const hasConflict = roomReservations.some((reservation) => {
-          const sameDate = date
-            ? reservation.data.slice(0, 10) === date
-            : true;
-
+          const sameDate = date ? reservation.data.slice(0, 10) === date : true;
           const sameTime = time
             ? time >= reservation.hora_inicio.slice(0, 5) &&
               time <= reservation.hora_fim.slice(0, 5)
             : true;
-
           return sameDate && sameTime;
         });
 
-        const status: Room["status"] = hasConflict
-          ? "reservada"
-          : "disponivel";
+        const status: Room["status"] = hasConflict ? "reservada" : "disponivel";
 
-        return {
-          ...room,
-          status,
-        };
+        return { ...room, status };
       })
-      .filter((room) =>
-        room.name.toLowerCase().includes(search.toLowerCase())
-      )
-      .filter((room) =>
-        roomFilter === "todos"
-          ? true
-          : room.roomType === roomFilter
-      );
+      .filter((room) => room.name.toLowerCase().includes(search.toLowerCase()))
+      .filter((room) => (roomFilter === "todos" ? true : room.roomType === roomFilter));
 
     setRooms(filteredRooms);
   };
 
   const filteredRooms = rooms.filter((room) =>
-    roomFilter === "todos"
-      ? true
-      : room.roomType === roomFilter
+    roomFilter === "todos" ? true : room.roomType === roomFilter
   );
 
   return (
-    <div className="w-full min-h-screen">
-      <div className="relative w-full flex flex-col items-center justify-center overflow-visible px-4 md:px-16 pt-24 pb-10 md:pt-28 md:pb-12">
-        <div className="absolute inset-0 bg-linear-to-r from-blue-800 via-teal-400 to-teal-500"></div>
+    <>
+      <ToastContainer />
 
-        <div className="relative z-10 w-full max-w-4xl mx-auto">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white text-center mb-6">
-            Salas Disponíveis
-          </h1>
+      <div className="w-full min-h-screen">
+        <div className="relative w-full flex flex-col items-center justify-center overflow-visible px-4 md:px-16 pt-24 pb-10 md:pt-28 md:pb-12">
+          <div className="absolute inset-0 bg-linear-to-r from-blue-800 via-teal-400 to-teal-500"></div>
 
-          <div className="bg-white/10 backdrop-blur-md p-4 md:p-6 rounded-xl flex flex-col md:flex-row md:flex-wrap gap-3 md:gap-4 items-center w-full">
-            <input
-              type="text"
-              placeholder="Buscar sala..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full md:flex-1 px-4 py-2 rounded-lg outline-none bg-white text-sm md:text-base"
-            />
+          <div className="relative z-10 w-full max-w-4xl mx-auto">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white text-center mb-6">
+              Salas Disponíveis
+            </h1>
 
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full md:w-auto px-4 py-2 rounded-lg outline-none bg-white text-sm md:text-base"
-            />
+            <div className="bg-white/10 backdrop-blur-md p-4 md:p-6 rounded-xl flex flex-col md:flex-row md:flex-wrap gap-3 md:gap-4 items-center w-full">
+              <input
+                type="text"
+                placeholder="Buscar sala..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full md:flex-1 px-4 py-2 rounded-lg outline-none bg-white text-sm md:text-base"
+              />
 
-            <input
-              type="time"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-              className="w-full md:w-auto px-4 py-2 rounded-lg outline-none bg-white text-sm md:text-base"
-            />
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="w-full md:w-auto px-4 py-2 rounded-lg outline-none bg-white text-sm md:text-base"
+              />
 
-            <button
-              onClick={handleSearch}
-              className="w-full md:w-auto bg-blue-700 hover:bg-blue-800 text-white px-6 py-2 rounded-xl transition text-sm md:text-base"
-            >
-              Buscar
-            </button>
+              <input
+                type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                className="w-full md:w-auto px-4 py-2 rounded-lg outline-none bg-white text-sm md:text-base"
+              />
 
-            {isAdmin && (
               <button
-                onClick={() => setShowCreateModal(true)}
-                className="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-xl transition text-sm md:text-base"
+                onClick={handleSearch}
+                className="w-full md:w-auto bg-blue-700 hover:bg-blue-800 text-white px-6 py-2 rounded-xl transition text-sm md:text-base"
               >
-                Nova sala +
+                Buscar
               </button>
-            )}
-          </div>
-        </div>
-      </div>
 
-      <div className="bg-white py-16 px-4 md:px-16 -mt-12 rounded-t-3xl shadow-lg">
-        <div className="flex justify-center mb-10">
-          <div className="inline-flex bg-gray-100 p-1.5 rounded-2xl shadow-inner border border-gray-200">
-            <button
-              onClick={() => setRoomFilter("todos")}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
-                roomFilter === "todos"
-                  ? "bg-white text-blue-700 shadow-md scale-105"
-                  : "text-gray-600 hover:text-gray-800"
-              }`}
-            >
-              <LayoutGrid size={16} />
-              Todos
-            </button>
-
-            <button
-              onClick={() => setRoomFilter("sala_aula")}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
-                roomFilter === "sala_aula"
-                  ? "bg-white text-blue-700 shadow-md scale-105"
-                  : "text-gray-600 hover:text-gray-800"
-              }`}
-            >
-              <GraduationCap size={16} />
-              Sala de Aula
-            </button>
-
-            <button
-              onClick={() => setRoomFilter("laboratorio")}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
-                roomFilter === "laboratorio"
-                  ? "bg-white text-blue-700 shadow-md scale-105"
-                  : "text-gray-600 hover:text-gray-800"
-              }`}
-            >
-              <Laptop size={16} />
-              Laboratório
-            </button>
+              {isAdmin && (
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-xl transition text-sm md:text-base"
+                >
+                  Nova sala +
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-          {filteredRooms.map((room) => (
-            <RoomCard
-              key={room.id}
-              id={room.id}
-              name={room.name}
-              capacity={room.capacity}
-              status={room.status}
-              onReserve={handleReserve}
-            />
-          ))}
+        <div className="bg-white py-16 px-4 md:px-16 -mt-12 rounded-t-3xl shadow-lg">
+          <div className="flex justify-center mb-10">
+            <div className="inline-flex bg-gray-100 p-1.5 rounded-2xl shadow-inner border border-gray-200">
+              <button
+                onClick={() => setRoomFilter("todos")}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                  roomFilter === "todos"
+                    ? "bg-white text-blue-700 shadow-md scale-105"
+                    : "text-gray-600 hover:text-gray-800"
+                }`}
+              >
+                <LayoutGrid size={16} />
+                Todos
+              </button>
+
+              <button
+                onClick={() => setRoomFilter("sala_aula")}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                  roomFilter === "sala_aula"
+                    ? "bg-white text-blue-700 shadow-md scale-105"
+                    : "text-gray-600 hover:text-gray-800"
+                }`}
+              >
+                <GraduationCap size={16} />
+                Sala de Aula
+              </button>
+
+              <button
+                onClick={() => setRoomFilter("laboratorio")}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                  roomFilter === "laboratorio"
+                    ? "bg-white text-blue-700 shadow-md scale-105"
+                    : "text-gray-600 hover:text-gray-800"
+                }`}
+              >
+                <Laptop size={16} />
+                Laboratório
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            {filteredRooms.map((room) => (
+              <RoomCard
+                key={room.id}
+                id={room.id}
+                name={room.name}
+                capacity={room.capacity}
+                status={room.status}
+                onReserve={handleReserve}
+              />
+            ))}
+          </div>
         </div>
+
+        {selectedRoomId && (
+          <ReservationModal
+            roomId={selectedRoomId}
+            onClose={() => setSelectedRoomId(null)}
+          />
+        )}
+
+        {showCreateModal && (
+          <CreateRoomModal
+            onClose={() => setShowCreateModal(false)}
+            onCreated={() => window.location.reload()}
+          />
+        )}
       </div>
-
-      {selectedRoomId && (
-        <ReservationModal
-          roomId={selectedRoomId}
-          onClose={() => setSelectedRoomId(null)}
-        />
-      )}
-
-      {showCreateModal && (
-        <CreateRoomModal
-          onClose={() => setShowCreateModal(false)}
-          onCreated={() => window.location.reload()}
-        />
-      )}
-    </div>
+    </>
   );
 }
