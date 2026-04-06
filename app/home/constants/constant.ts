@@ -1,4 +1,4 @@
-import { BsCalendar, BsPerson, BsBuilding, BsDoorOpen } from "react-icons/bs";
+import { BsCalendar, BsPerson,BsDoorOpen } from "react-icons/bs";
 
 export const Navlinks = [
   { id: 1, url: "/rooms", label: "Salas" },
@@ -9,26 +9,25 @@ export const Navlinks = [
 export const features = [
   {
     id: 1,
-    title: "Ver salas",
-    description: "Ver salas disponíveis",
-    icon: BsDoorOpen, 
+    title: "Salas",
+    description: "Visualize e reserve salas disponíveis.",
+    icon: BsDoorOpen,
+    path: "/rooms",
   },
   {
     id: 2,
-    title: "Laboratório",
-    description: "Ver laboratório",
-    icon: BsBuilding, 
+    title: "Reservas",
+    description: "Acompanhe suas reservas realizadas.",
+    icon: BsCalendar,
+    path: "/reservations",
   },
   {
     id: 3,
-    title: "Minhas reservas",
-    description: "Ver suas reservas",
-    icon: BsCalendar, 
-  },
-  {
-    id: 4,
-    title: "Administração",
-    description: "Gerenciar usuários e sistema",
-    icon: BsPerson, 
+    title: "Painel Administrativo",
+    description:
+      "Gerencie salas, usuários e reservas do sistema.",
+    icon: BsPerson,
+    path: "/admin",
+    adminOnly: true,
   },
 ];

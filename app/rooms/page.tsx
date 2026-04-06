@@ -34,7 +34,6 @@ export default function Rooms() {
     setIsAdmin(userType === "admin_cpd");
   }, []);
 
-  // ✅ AGORA RECEBE O ID
   const handleReserve = (roomId: string) => {
     const userType = localStorage.getItem("userType");
 

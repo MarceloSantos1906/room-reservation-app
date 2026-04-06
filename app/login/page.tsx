@@ -51,13 +51,14 @@ export default function LoginPage() {
 
       localStorage.setItem("token", data.token);
       localStorage.setItem("userType", data.usuario.tipo);
+      localStorage.setItem("userId", data.usuario.id);
 
       if (rememberMe) {
         localStorage.setItem("rememberEmail", email);
       }
       const redirectPath =
         data.usuario.tipo === "admin_cpd"
-          ? "/admin/users"
+          ? "/admin"
           : "/rooms";
 
       router.replace(redirectPath);

@@ -38,7 +38,7 @@ export default function RoomCard({
   };
 
   return (
-    <div className="rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden bg-white border border-gray-100">
+    <div className="rounded-2xl shadow-md hover:shadow-xl transition-transform cursor-pointer duration-300 overflow-hidden bg-white border border-gray-100 hover:scale-105 ease-in-out">
       <div className="p-6 flex flex-col items-start text-left">
         <h3 className="text-lg md:text-xl font-bold text-black">
           {name}
