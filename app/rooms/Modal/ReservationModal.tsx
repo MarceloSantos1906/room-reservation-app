@@ -5,6 +5,7 @@ import { User, BookOpen, CalendarDays, Clock3, FileText } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import Image from "next/image";
 import "react-toastify/dist/ReactToastify.css";
+import { useAuth } from "@/contexts/AuthContext";
 
 type Props = {
   roomId: string;
@@ -12,7 +13,11 @@ type Props = {
 };
 
 export default function ReservationModal({ roomId, onClose }: Props) {
-  const [responsibleName, setResponsibleName] = useState("");
+  const { user } = useAuth();
+
+  const [responsibleName, setResponsibleName] = useState(
+    user?.tipo !== "admin_cpd" ? "Professor" : ""
+  );
   const [subject, setSubject] = useState("");
   const [date, setDate] = useState("");
   const [turno, setTurno] = useState("matutino");
@@ -20,14 +25,16 @@ export default function ReservationModal({ roomId, onClose }: Props) {
   const [observation, setObservation] = useState("");
 
   const handleSubmit = async () => {
-    if (!responsibleName || !subject || !date) {
+    if ((user?.tipo === "admin_cpd" && !responsibleName) || !subject || !date) {
       toast.warning("Preencha todos os campos obrigatórios!");
       return;
     }
 
     try {
       const usuarioId = localStorage.getItem("userId");
-      if (!usuarioId) {
+      const token = localStorage.getItem("token");
+
+      if (!usuarioId || !token) {
         toast.error("Usuário não encontrado.");
         return;
       }
@@ -39,21 +46,26 @@ export default function ReservationModal({ roomId, onClose }: Props) {
         data: date,
         turno,
         aula_numero: lessonNumber,
-        motivo: `${subject} - ${responsibleName}${
-          observation ? " - " + observation : ""
-        }`,
+        motivo:subject,
       };
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/reservas`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify(payload),
         }
       );
 
-      if (!response.ok) throw new Error("Erro ao reservar sala");
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result?.message || "Erro ao reservar sala");
+      }
 
       toast.success("Reserva realizada com sucesso!");
       onClose();
@@ -76,7 +88,6 @@ export default function ReservationModal({ roomId, onClose }: Props) {
         onClick={handleBackgroundClick}
       >
         <div className="w-full max-w-lg bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-200 flex flex-col max-h-[90vh]">
-          
           <div className="flex flex-col items-center p-6 border-b border-gray-200">
             <Image
               src="/images/unespar.png"
@@ -89,19 +100,23 @@ export default function ReservationModal({ roomId, onClose }: Props) {
               Reservar Sala
             </h2>
           </div>
+
           <div className="p-6 overflow-y-auto flex-1 space-y-4">
-            <div>
-              <label className="flex items-center gap-2 mb-2 text-sm font-medium text-black">
-                <User size={16} />
-                Nome do responsável
-              </label>
-              <input
-                type="text"
-                value={responsibleName}
-                onChange={(e) => setResponsibleName(e.target.value)}
-                className="w-full border rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+            {user?.tipo === "admin_cpd" && (
+              <div>
+                <label className="flex items-center gap-2 mb-2 text-sm font-medium text-black">
+                  <User size={16} />
+                  Nome do responsável
+                </label>
+                <input
+                  type="text"
+                  value={responsibleName}
+                  onChange={(e) => setResponsibleName(e.target.value)}
+                  className="w-full border rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            )}
+
             <div>
               <label className="flex items-center gap-2 mb-2 text-sm font-medium text-black">
                 <BookOpen size={16} />
@@ -114,6 +129,7 @@ export default function ReservationModal({ roomId, onClose }: Props) {
                 className="w-full border rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
+
             <div>
               <label className="flex items-center gap-2 mb-2 text-sm font-medium text-black">
                 <CalendarDays size={16} />
@@ -126,6 +142,7 @@ export default function ReservationModal({ roomId, onClose }: Props) {
                 className="w-full border rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
+
             <div>
               <label className="flex items-center gap-2 mb-2 text-sm font-medium text-black">
                 <Clock3 size={16} />
@@ -141,6 +158,7 @@ export default function ReservationModal({ roomId, onClose }: Props) {
                 <option value="noturno">Noturno</option>
               </select>
             </div>
+
             <div>
               <label className="text-sm font-medium text-black mb-2 block">
                 Aula número
@@ -154,6 +172,7 @@ export default function ReservationModal({ roomId, onClose }: Props) {
                 className="w-full border rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
+
             <div>
               <label className="flex items-center gap-2 mb-2 text-sm font-medium text-black">
                 <FileText size={16} />
@@ -167,6 +186,7 @@ export default function ReservationModal({ roomId, onClose }: Props) {
               />
             </div>
           </div>
+
           <div className="flex justify-end gap-3 p-6 border-t border-gray-200">
             <button
               onClick={handleSubmit}

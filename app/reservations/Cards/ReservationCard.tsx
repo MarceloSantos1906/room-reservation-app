@@ -57,25 +57,19 @@ export default function ReservationCard({ reservation }: Props) {
   const formattedStartHour = hora_inicio?.slice(0, 5);
   const formattedEndHour = hora_fim?.slice(0, 5);
 
-  const isCreatedByAdmin =
-    criado_por_nome && criado_por_nome !== usuario_nome;
+  const showCreatedBy =
+    criado_por_nome &&
+    criado_por_nome.trim() !== "" &&
+    criado_por_nome !== usuario_nome;
 
   return (
-    <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-5 hover:shadow-lg transition-all duration-300">
-      <div className="flex items-start justify-between gap-3 mb-4">
+    <div className="bg-white rounded-3xl shadow-lg border border-gray-200 p-5 hover:shadow-xl transition duration-300">
+      <div className="flex justify-between items-start mb-3">
         <div>
           <h2 className="text-lg font-bold text-gray-900">
-            {bloco} - {nome_numero}
+            {nome_numero}
           </h2>
-          <p className="text-sm text-gray-500">
-            Professor: {usuario_nome}
-          </p>
-
-          {isCreatedByAdmin && (
-            <p className="text-xs text-blue-600 mt-1">
-              Criado por: {criado_por_nome}
-            </p>
-          )}
+          <p className="text-sm text-gray-500">{bloco}</p>
         </div>
 
         <span
@@ -84,8 +78,20 @@ export default function ReservationCard({ reservation }: Props) {
           {status}
         </span>
       </div>
+      <div className="mb-3">
+        <div className="flex items-center gap-2 text-sm text-gray-700">
+          <BookOpen size={16} className="text-blue-500" />
+          <span className="font-medium">{usuario_nome}</span>
+        </div>
 
-      <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm text-gray-700">
+        {showCreatedBy && (
+          <div className="flex items-center gap-2 text-xs text-gray-500 mt-1 ml-6">
+            <User size={14} />
+            <span>Reserva criada por {criado_por_nome}</span>
+          </div>
+        )}
+      </div>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-gray-700">
         <div className="flex items-center gap-2">
           <CalendarDays size={16} className="text-green-500" />
           <span>{formattedDate}</span>
@@ -105,18 +111,12 @@ export default function ReservationCard({ reservation }: Props) {
 
         <div className="flex items-center gap-2">
           <BadgeInfo size={16} className="text-pink-500" />
-          <span>
-            {aula_numero} {aula_numero > 1 ? "aulas" : "aula"}
-          </span>
+          <span>{aula_numero}ª aula</span>
         </div>
+      </div>
 
-        <div className="flex items-center gap-2 col-span-2 pt-2 border-t border-gray-100">
-          <BookOpen size={16} className="text-blue-500" />
-          <p className="text-sm text-gray-700">
-            <span className="font-medium text-gray-800">Disciplina:</span>{" "}
-            {motivo}
-          </p>
-        </div>
+      <div className="mt-3 pt-3 border-t border-gray-100 text-sm text-gray-700">
+        {motivo}
       </div>
     </div>
   );
