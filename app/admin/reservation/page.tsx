@@ -17,26 +17,43 @@ import { toast, ToastContainer } from "react-toastify";
 import Image from "next/image";
 import "react-toastify/dist/ReactToastify.css";
 
-type Room = { id: string; nome_numero: string; bloco: string };
-type User = { id: string; nome: string; tipo: string };
+type Room = {
+  id: string;
+  nome_numero: string;
+  bloco: string;
+};
+
+type UserType = {
+  id: string;
+  nome: string;
+  tipo: string;
+};
+
 type Reservation = {
   id: string;
   sala_id: string;
   usuario_id: string;
+  criado_por?: string;
   data: string;
   turno: string;
   aula_numero: number;
+  hora_inicio?: string;
+  hora_fim?: string;
+  status?: string;
   motivo: string;
+  nome_numero?: string;
+  bloco?: string;
+  usuario_nome?: string;
 };
 
 export default function AdminReservationPanel() {
   const [rooms, setRooms] = useState<Room[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<UserType[]>([]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [activeTab, setActiveTab] = useState<"form" | "list">("form");
 
-  const [selectedRoomId, setSelectedRoomId] = useState<string>("");
-  const [selectedUserId, setSelectedUserId] = useState<string>("");
+  const [selectedRoomId, setSelectedRoomId] = useState("");
+  const [selectedUserId, setSelectedUserId] = useState("");
   const [subject, setSubject] = useState("");
   const [date, setDate] = useState("");
   const [turno, setTurno] = useState("matutino");
@@ -46,41 +63,32 @@ export default function AdminReservationPanel() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchRooms = async () => {
+    const fetchInitialData = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/salas`);
-        const data = await res.json();
-        setRooms(data);
-        if (data.length > 0) setSelectedRoomId(data[0].id);
+        const [roomsRes, usersRes, reservationsRes] = await Promise.all([
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/salas`),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/usuarios`),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reservas`),
+        ]);
+
+        const [roomsData, usersData, reservationsData] = await Promise.all([
+          roomsRes.json(),
+          usersRes.json(),
+          reservationsRes.json(),
+        ]);
+
+        setRooms(roomsData);
+        setUsers(usersData);
+        setReservations(reservationsData);
+
+        if (roomsData.length > 0) setSelectedRoomId(roomsData[0].id);
+        if (usersData.length > 0) setSelectedUserId(usersData[0].id);
       } catch {
-        toast.error("Não foi possível carregar as salas");
+        toast.error("Erro ao carregar dados");
       }
     };
 
-    const fetchUsers = async () => {
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/usuarios`);
-        const data = await res.json();
-        setUsers(data);
-        if (data.length > 0) setSelectedUserId(data[0].id);
-      } catch {
-        toast.error("Não foi possível carregar os usuários");
-      }
-    };
-
-    const fetchReservations = async () => {
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reservas`);
-        const data = await res.json();
-        setReservations(data);
-      } catch {
-        toast.error("Não foi possível carregar as reservas");
-      }
-    };
-
-    fetchRooms();
-    fetchUsers();
-    fetchReservations();
+    fetchInitialData();
   }, []);
 
   const resetForm = () => {
@@ -103,7 +111,7 @@ export default function AdminReservationPanel() {
     const conflict = reservations.find(
       (r) =>
         r.sala_id === selectedRoomId &&
-        r.data === date &&
+        r.data.slice(0, 10) === date &&
         r.turno === turno &&
         r.aula_numero === lessonNumber &&
         r.id !== editingId
@@ -111,12 +119,13 @@ export default function AdminReservationPanel() {
 
     if (conflict) {
       toast.error(
-        `Conflito de horário! A sala já está reservada para aula ${lessonNumber} no turno ${turno}.`
+        `Conflito! Sala já reservada para aula ${lessonNumber} no turno ${turno}.`
       );
       return;
     }
 
     setLoading(true);
+
     try {
       const token = localStorage.getItem("token");
       const adminId = localStorage.getItem("userId") || "admin";
@@ -128,14 +137,13 @@ export default function AdminReservationPanel() {
         data: date,
         turno,
         aula_numero: lessonNumber,
-        motivo: `${subject} - ${
-          users.find((u) => u.id === selectedUserId)?.nome || ""
-        }${observation ? " - " + observation : ""}`,
+        motivo: observation ? `${subject} - ${observation}` : subject,
       };
 
       const url = editingId
         ? `${process.env.NEXT_PUBLIC_API_URL}/api/reservas/${editingId}`
         : `${process.env.NEXT_PUBLIC_API_URL}/api/reservas`;
+
       const method = editingId ? "PUT" : "POST";
 
       const response = await fetch(url, {
@@ -150,17 +158,17 @@ export default function AdminReservationPanel() {
       const result = await response.json();
 
       if (!response.ok) {
-        console.error("Erro ao criar/editar reserva:", result);
         throw new Error(result?.message || "Erro ao salvar reserva");
       }
 
       toast.success(editingId ? "Reserva atualizada!" : "Reserva criada!");
+
       if (editingId) {
-        setReservations(
-          reservations.map((r) => (r.id === result.id ? result : r))
+        setReservations((prev) =>
+          prev.map((r) => (r.id === result.id ? result : r))
         );
       } else {
-        setReservations([...reservations, result]);
+        setReservations((prev) => [...prev, result]);
       }
 
       resetForm();
@@ -173,17 +181,18 @@ export default function AdminReservationPanel() {
   };
 
   const handleEdit = (reservation: Reservation) => {
-    const [subjectName, responsible, ...obs] = reservation.motivo.split(" - ");
+    const [subjectName, ...obs] = reservation.motivo.split(" - ");
+
     setSubject(subjectName);
-    const user = users.find((u) => u.nome === responsible);
-    if (user) setSelectedUserId(user.id);
     setObservation(obs.join(" - "));
     setSelectedRoomId(reservation.sala_id);
+    setSelectedUserId(reservation.usuario_id);
     setDate(reservation.data.slice(0, 10));
     setTurno(reservation.turno);
     setLessonNumber(reservation.aula_numero);
     setEditingId(reservation.id);
     setActiveTab("form");
+
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -203,36 +212,47 @@ export default function AdminReservationPanel() {
       );
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data?.message || "Erro ao cancelar reserva");
+        throw new Error("Erro ao cancelar reserva");
       }
 
-      toast.success("Reserva cancelada com sucesso!");
-      setReservations(reservations.filter((r) => r.id !== id));
+      toast.success("Reserva cancelada!");
+      setReservations((prev) => prev.filter((r) => r.id !== id));
     } catch (error: any) {
-      toast.error(error.message || "Erro ao cancelar reserva");
+      toast.error(error.message || "Erro ao cancelar");
     }
+  };
+
+  const turnoColors = {
+    matutino: "bg-yellow-100 text-yellow-700",
+    vespertino: "bg-orange-100 text-orange-700",
+    noturno: "bg-indigo-100 text-indigo-700",
   };
 
   return (
     <>
       <ToastContainer />
       <div className="min-h-screen pt-24 bg-linear-to-br from-blue-900 via-blue-700 to-teal-500 px-4 sm:px-6 py-8 sm:py-10">
-        <div className="max-w-4xl mx-auto space-y-10">
-          <div className="flex justify-center gap-4 mb-6">
+        <div className="max-w-5xl mx-auto space-y-10">
+          {/* tabs */}
+          <div className="flex justify-center gap-4">
             <button
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition ${
-                activeTab === "form" ? "bg-blue-700 text-white" : "bg-white text-blue-700"
-              }`}
               onClick={() => setActiveTab("form")}
+              className={`flex items-center gap-2 px-5 py-2 rounded-xl font-semibold transition ${
+                activeTab === "form"
+                  ? "bg-blue-700 text-white"
+                  : "bg-white text-blue-700"
+              }`}
             >
               <Plus size={16} /> Cadastro
             </button>
+
             <button
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold transition ${
-                activeTab === "list" ? "bg-blue-700 text-white" : "bg-white text-blue-700"
-              }`}
               onClick={() => setActiveTab("list")}
+              className={`flex items-center gap-2 px-5 py-2 rounded-xl font-semibold transition ${
+                activeTab === "list"
+                  ? "bg-blue-700 text-white"
+                  : "bg-white text-blue-700"
+              }`}
             >
               <List size={16} /> Lista
             </button>
@@ -249,116 +269,83 @@ export default function AdminReservationPanel() {
                   priority
                 />
               </div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-[#1E3A8A] text-center mb-2">
+
+              <h2 className="text-3xl font-bold text-[#1E3A8A] text-center mb-6">
                 {editingId ? "Editar Reserva" : "Cadastro de Reserva"}
               </h2>
-              <p className="text-gray-500 text-center mb-6">
-                {editingId
-                  ? "Altere as informações da reserva"
-                  : "Cadastre novas reservas de salas facilmente"}
-              </p>
 
               <div className="grid grid-cols-1 gap-5">
-                <div>
-                  <label className="text-sm font-medium mb-1 block text-gray-500">
-                    Sala
-                  </label>
-                  <select
-                    value={selectedRoomId}
-                    onChange={(e) => setSelectedRoomId(e.target.value)}
-                    className="w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-gray-400 text-gray-700 placeholder-gray-400"
-                  >
-                    {rooms.map((room) => (
-                      <option key={room.id} value={room.id}>
-                        {room.nome_numero} - {room.bloco}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="flex items-center gap-2 text-sm font-medium mb-1 text-gray-500">
-                    <User size={16} /> Professor
-                  </label>
-                  <select
-                    value={selectedUserId}
-                    onChange={(e) => setSelectedUserId(e.target.value)}
-                    className="w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-gray-400 text-gray-700 placeholder-gray-400"
-                  >
-                    {users.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.nome} ({u.tipo})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="flex items-center gap-2 text-sm font-medium mb-1 text-gray-500">
-                    <BookOpen size={16} /> Disciplina
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Ex: Matemática"
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                    className="w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-gray-400 text-gray-700 placeholder-gray-400"
-                  />
-                </div>
-                <div>
-                  <label className="flex items-center gap-2 text-sm font-medium mb-1 text-gray-500">
-                    <CalendarDays size={16} /> Data
-                  </label>
-                  <input
-                    type="date"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    className="w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-gray-400 text-gray-700 placeholder-gray-400"
-                  />
-                </div>
-                <div>
-                  <label className="flex items-center gap-2 text-sm font-medium mb-1 text-gray-500">
-                    <Clock3 size={16} /> Turno
-                  </label>
-                  <select
-                    value={turno}
-                    onChange={(e) => setTurno(e.target.value)}
-                    className="w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-gray-400 text-gray-700 placeholder-gray-400"
-                  >
-                    <option value="matutino">Matutino</option>
-                    <option value="vespertino">Vespertino</option>
-                    <option value="noturno">Noturno</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-sm font-medium mb-1 block text-gray-500">
-                    Aula número
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={6}
-                    value={lessonNumber}
-                    onChange={(e) => setLessonNumber(Number(e.target.value))}
-                    className="w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-gray-400 text-gray-700 placeholder-gray-400"
-                  />
-                </div>
-                <div>
-                  <label className="flex items-center gap-2 text-sm font-medium mb-1 text-gray-500">
-                    <FileText size={16} /> Observação
-                  </label>
-                  <textarea
-                    placeholder="Ex: Solicitar projetor"
-                    value={observation}
-                    onChange={(e) => setObservation(e.target.value)}
-                    rows={3}
-                    className="w-full border rounded-xl px-4 py-3 resize-none outline-none focus:ring-2 focus:ring-gray-400 text-gray-700 placeholder-gray-400"
-                  />
-                </div>
+                <select
+                  value={selectedRoomId}
+                  onChange={(e) => setSelectedRoomId(e.target.value)}
+                  className="w-full border rounded-xl px-4 py-3"
+                >
+                  {rooms.map((room) => (
+                    <option key={room.id} value={room.id}>
+                      {room.nome_numero} - {room.bloco}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  value={selectedUserId}
+                  onChange={(e) => setSelectedUserId(e.target.value)}
+                  className="w-full border rounded-xl px-4 py-3"
+                >
+                  {users.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.nome}
+                    </option>
+                  ))}
+                </select>
+
+                <input
+                  type="text"
+                  placeholder="Disciplina"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  className="w-full border rounded-xl px-4 py-3"
+                />
+
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="w-full border rounded-xl px-4 py-3"
+                />
+
+                <select
+                  value={turno}
+                  onChange={(e) => setTurno(e.target.value)}
+                  className="w-full border rounded-xl px-4 py-3"
+                >
+                  <option value="matutino">Matutino</option>
+                  <option value="vespertino">Vespertino</option>
+                  <option value="noturno">Noturno</option>
+                </select>
+
+                <input
+                  type="number"
+                  min={1}
+                  max={6}
+                  value={lessonNumber}
+                  onChange={(e) => setLessonNumber(Number(e.target.value))}
+                  className="w-full border rounded-xl px-4 py-3"
+                />
+
+                <textarea
+                  placeholder="Observação"
+                  value={observation}
+                  onChange={(e) => setObservation(e.target.value)}
+                  rows={3}
+                  className="w-full border rounded-xl px-4 py-3"
+                />
+
                 <button
                   onClick={handleSubmit}
                   disabled={loading}
-                  className="w-full flex items-center justify-center gap-2 bg-blue-700 hover:bg-blue-800 text-white py-3 rounded-xl font-semibold transition shadow-lg"
+                  className="w-full bg-blue-700 hover:bg-blue-800 text-white py-3 rounded-xl font-semibold transition"
                 >
-                  <Check size={18} />{" "}
                   {loading
                     ? "Salvando..."
                     : editingId
@@ -370,43 +357,116 @@ export default function AdminReservationPanel() {
           )}
           {activeTab === "list" && (
             <div className="bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-white/30 p-6">
-              <h3 className="text-xl font-bold mb-2 text-gray-800">Reservas existentes</h3>
-              <p className="text-gray-500 mb-4">
-                Visualize, edite ou cancele reservas cadastradas.
-              </p>
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold text-gray-800">
+                  Reservas existentes
+                </h3>
+                <p className="text-gray-500 text-sm mt-1">
+                  Visualize, edite ou cancele reservas cadastradas.
+                </p>
+              </div>
 
               {reservations.length === 0 ? (
                 <p className="text-gray-500">Nenhuma reserva cadastrada.</p>
               ) : (
-                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <ul className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                   {reservations.map((r) => {
-                    const room = rooms.find((room) => room.id === r.sala_id);
-                    const user = users.find((u) => u.id === r.usuario_id);
+                    const creator = users.find((u) => u.id === r.criado_por);
+
                     return (
                       <li
                         key={r.id}
-                        className="flex flex-col justify-between bg-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition"
+                        className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 p-5 flex flex-col justify-between"
                       >
                         <div>
-                          <p className="font-semibold text-gray-800">
-                            Sala: {room ? `${room.nome_numero} - ${room.bloco}` : r.sala_id}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            {r.motivo} | {r.data.slice(0, 10)} | {r.turno} | Aula {r.aula_numero} | Professor: {user?.nome}
-                          </p>
+                          <div className="flex items-start justify-between mb-4">
+                            <div>
+                              <h4 className="text-lg font-bold text-gray-800">
+                                {r.nome_numero}
+                              </h4>
+                              <p className="text-sm text-gray-500">
+                                {r.bloco}
+                              </p>
+                            </div>
+
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                turnoColors[
+                                  r.turno as keyof typeof turnoColors
+                                ] || "bg-gray-100 text-gray-700"
+                              }`}
+                            >
+                              {r.turno}
+                            </span>
+                          </div>
+
+                          <div className="mb-4">
+                            <p className="text-sm text-gray-500">
+                              Disciplina
+                            </p>
+                            <p className="font-semibold text-blue-800 text-lg">
+                              {r.motivo}
+                            </p>
+                          </div>
+
+                          <div className="space-y-2 text-sm">
+                            <p className="text-gray-600">
+                              <span className="font-medium text-gray-800">
+                                Professor:
+                              </span>{" "}
+                              {r.usuario_nome}
+                            </p>
+
+                            <p className="text-gray-600">
+                              <span className="font-medium text-gray-800">
+                                Data:
+                              </span>{" "}
+                              {r.data.slice(0, 10)}
+                            </p>
+
+                            <p className="text-gray-600">
+                              <span className="font-medium text-gray-800">
+                                Horário:
+                              </span>{" "}
+                              <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded-lg text-xs font-semibold">
+                                {r.hora_inicio} às {r.hora_fim}
+                              </span>
+                            </p>
+
+                            <p className="text-gray-600">
+                              <span className="font-medium text-gray-800">
+                                Aula:
+                              </span>{" "}
+                              {r.aula_numero}
+                            </p>
+
+                            {creator &&
+                              creator.nome !== r.usuario_nome && (
+                                <p className="text-gray-600">
+                                  <span className="font-medium text-gray-800">
+                                    Criado por:
+                                  </span>{" "}
+                                  {creator.nome}
+                                </p>
+                              )}
+                          </div>
                         </div>
-                        <div className="flex justify-end gap-3 mt-3">
+
+                        <div className="flex gap-3 mt-5">
                           <button
-                            className="flex items-center gap-1 text-yellow-600 hover:text-yellow-800 font-semibold"
+                            className="flex-1 flex items-center justify-center gap-2 bg-yellow-50 text-yellow-700 hover:bg-yellow-100 py-2 rounded-xl font-semibold transition"
                             onClick={() => handleEdit(r)}
                           >
-                            <Edit size={16} /> Editar
+                            <Edit size={16} />
+                            Editar
                           </button>
+
                           <button
-                            className="flex items-center gap-1 text-red-600 hover:text-red-800 font-semibold"
+                            className="flex-1 flex items-center justify-center gap-2 bg-red-50 text-red-700 hover:bg-red-100 py-2 rounded-xl font-semibold transition"
                             onClick={() => handleCancel(r.id)}
                           >
-                            <X size={16} /> Cancelar
+                            <X size={16} />
+                            Cancelar
                           </button>
                         </div>
                       </li>
