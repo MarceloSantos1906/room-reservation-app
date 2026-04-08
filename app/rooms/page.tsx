@@ -13,7 +13,15 @@ type Room = {
   name: string;
   capacity: number;
   roomType: "sala_aula" | "laboratorio";
-  status: "disponivel" | "ocupada" | "reservada";
+  status: "disponivel" | "reservada";
+};
+
+type Reservation = {
+  sala_id: string;
+  status: string;
+  data: string;
+  hora_inicio: string;
+  hora_fim: string;
 };
 
 type RoomFilter = "todos" | "sala_aula" | "laboratorio";
@@ -21,9 +29,10 @@ type RoomFilter = "todos" | "sala_aula" | "laboratorio";
 export default function Rooms() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [allRooms, setAllRooms] = useState<Room[]>([]);
-  const [reservations, setReservations] = useState<any[]>([]);
+  const [reservations, setReservations] = useState<Reservation[]>([]);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [search, setSearch] = useState("");
   const [date, setDate] = useState("");
@@ -31,84 +40,125 @@ export default function Rooms() {
   const [roomFilter, setRoomFilter] = useState<RoomFilter>("todos");
 
   useEffect(() => {
-    const userType = localStorage.getItem("userType");
-    setIsAdmin(userType === "admin_cpd");
-  }, []);
-
-  const handleReserve = (roomId: string) => {
-    const userType = localStorage.getItem("userType");
-    if (!userType) {
-      toast.info("Você precisa estar logado para fazer uma reserva.");
-      return;
-    }
-    setSelectedRoomId(roomId);
-  };
-
-  useEffect(() => {
-    const fetchRooms = async () => {
+    const fetchUser = async () => {
       try {
-        const [roomsResponse, reservationsResponse] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/salas`),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reservas`),
-        ]);
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/auth/user`,
+          {
+            credentials: "include",
+          }
+        );
 
-        const roomsData = await roomsResponse.json();
-        const reservationsData = await reservationsResponse.json();
-
-        setReservations(reservationsData);
-
-        const formattedRooms: Room[] = roomsData.map((room: any) => {
-          const hasActiveReservation = reservationsData.some(
-            (reservation: any) =>
-              reservation.sala_id === room.id && reservation.status === "ativa"
-          );
-
-          const status: Room["status"] = hasActiveReservation
-            ? "reservada"
-            : "disponivel";
-
-          return {
-            id: room.id,
-            name: `${room.nome_numero} - ${room.bloco}`,
-            capacity: room.capacidade,
-            roomType: room.tipo_sala,
-            status,
-          };
-        });
-
-        setRooms(formattedRooms);
-        setAllRooms(formattedRooms);
+        if (response.ok) {
+          const data = await response.json();
+          setIsAdmin(data.tipo === "admin_cpd");
+          setIsLoggedIn(true);
+        } else {
+          setIsAdmin(false);
+          setIsLoggedIn(false);
+        }
       } catch (error) {
-        console.error("Erro ao buscar salas:", error);
+        console.error("Erro ao buscar usuário:", error);
+        setIsAdmin(false);
+        setIsLoggedIn(false);
       }
     };
 
-    fetchRooms();
+    fetchUser();
   }, []);
 
+  const fetchRoomsData = async () => {
+    try {
+      const [roomsResponse, reservationsResponse] = await Promise.all([
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/salas`, {
+          credentials: "include",
+        }),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reservas`, {
+          credentials: "include",
+        }),
+      ]);
+
+      const roomsData = await roomsResponse.json();
+      const reservationsData = await reservationsResponse.json();
+
+      const today = new Date().toISOString().slice(0, 10);
+
+      setReservations(reservationsData);
+
+      const formattedRooms: Room[] = roomsData.map((room: any) => {
+        const hasActiveReservation = reservationsData.some(
+          (reservation: Reservation) =>
+            reservation.sala_id === room.id &&
+            reservation.status === "ativa" &&
+            reservation.data.slice(0, 10) === today
+        );
+
+        return {
+          id: room.id,
+          name: `${room.nome_numero} - ${room.bloco}`,
+          capacity: room.capacidade,
+          roomType: room.tipo_sala,
+          status: hasActiveReservation ? "reservada" : "disponivel",
+        };
+      });
+
+      setRooms(formattedRooms);
+      setAllRooms(formattedRooms);
+    } catch (error) {
+      console.error("Erro ao buscar salas:", error);
+      toast.error("Erro ao carregar salas.");
+    }
+  };
+
+  useEffect(() => {
+    fetchRoomsData();
+  }, []);
+
+  const handleReserve = (roomId: string) => {
+    if (!isLoggedIn) {
+      toast.info("Você precisa estar logado para fazer uma reserva.");
+      return;
+    }
+
+    setSelectedRoomId(roomId);
+  };
+
   const handleSearch = () => {
+    const searchDate = date || new Date().toISOString().slice(0, 10);
+
     const filteredRooms: Room[] = allRooms
       .map((room) => {
         const roomReservations = reservations.filter(
           (reservation) =>
-            reservation.sala_id === room.id && reservation.status === "ativa"
+            reservation.sala_id === room.id &&
+            reservation.status === "ativa"
         );
 
         const hasConflict = roomReservations.some((reservation) => {
-          const sameDate = date ? reservation.data.slice(0, 10) === date : true;
+          const sameDate =
+            reservation.data.slice(0, 10) === searchDate;
+
           const sameTime = time
             ? time >= reservation.hora_inicio.slice(0, 5) &&
               time <= reservation.hora_fim.slice(0, 5)
             : true;
+
           return sameDate && sameTime;
         });
 
-        const status: Room["status"] = hasConflict ? "reservada" : "disponivel";
-
-        return { ...room, status };
+        return {
+          ...room,
+          status: (hasConflict
+            ? "reservada"
+            : "disponivel") as Room["status"],
+        };
       })
-      .filter((room) => room.name.toLowerCase().includes(search.toLowerCase()))
-      .filter((room) => (roomFilter === "todos" ? true : room.roomType === roomFilter));
+      .filter((room) =>
+        room.name.toLowerCase().includes(search.toLowerCase())
+      )
+      .filter((room) =>
+        roomFilter === "todos" ? true : room.roomType === roomFilter
+      );
 
     setRooms(filteredRooms);
   };
@@ -231,13 +281,14 @@ export default function Rooms() {
           <ReservationModal
             roomId={selectedRoomId}
             onClose={() => setSelectedRoomId(null)}
+            onCreated={fetchRoomsData}
           />
         )}
 
         {showCreateModal && (
           <CreateRoomModal
             onClose={() => setShowCreateModal(false)}
-            onCreated={() => window.location.reload()}
+            onCreated={fetchRoomsData}
           />
         )}
       </div>

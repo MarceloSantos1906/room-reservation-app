@@ -2,59 +2,63 @@
 
 import { useEffect, useState } from "react";
 import ReservationCard from "./Cards/ReservationCard";
+import { useAuth } from "@/contexts/AuthContext";
 
 type Reservation = {
   id: string;
   bloco: string;
   nome_numero: string;
   usuario_nome: string;
+  usuario_id: string;
   data: string;
   hora_inicio: string;
   hora_fim: string;
   turno: string;
   aula_numero: number;
-  motivo: string;
+  disciplina: string;
   status: string;
 };
 
 export default function ReservationsPage() {
+  const { user } = useAuth();
   const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [filteredReservations, setFilteredReservations] =
-    useState<Reservation[]>([]);
+  const [filteredReservations, setFilteredReservations] = useState<Reservation[]>([]);
   const [search, setSearch] = useState("");
   const [date, setDate] = useState("");
 
   useEffect(() => {
-    fetchReservations();
-  }, []);
+    if (user) fetchReservations();
+  }, [user]);
 
   const fetchReservations = async () => {
+    if (!user) return;
+
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/reservas`
-      );
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reservas`, {
+        credentials: "include", 
+      });
+
+      if (!response.ok) throw new Error("Falha ao buscar reservas");
+
       const data = await response.json();
 
-      const userType = localStorage.getItem("userType");
-      const userId = localStorage.getItem("userId");
-
       const visibleReservations =
-        userType === "admin_cpd"
+        user.tipo === "admin_cpd"
           ? data
-          : data.filter(
-              (reservation: any) => reservation.usuario_id === userId
-            );
-      const formatted = visibleReservations.map((reservation: any) => ({
+          : data.filter((reservation: any) => reservation.usuario_id === user.id);
+
+      const formatted: Reservation[] = visibleReservations.map((reservation: any) => ({
         id: reservation.id,
         bloco: reservation.bloco,
         nome_numero: reservation.nome_numero,
         usuario_nome: reservation.usuario_nome,
+        usuario_id: reservation.usuario_id,
         data: reservation.data.slice(0, 10),
         hora_inicio: reservation.hora_inicio,
         hora_fim: reservation.hora_fim,
         turno: reservation.turno,
         aula_numero: reservation.aula_numero,
-        motivo: reservation.motivo,
+        disciplina: reservation.disciplina || "—",
         status: reservation.status,
       }));
 
@@ -66,10 +70,13 @@ export default function ReservationsPage() {
   };
 
   const handleSearch = () => {
+    if (!user) return;
+
     const filtered = reservations.filter((reservation) => {
       const matchSearch =
         reservation.nome_numero.toLowerCase().includes(search.toLowerCase()) ||
-        reservation.usuario_nome.toLowerCase().includes(search.toLowerCase());
+        (user.tipo === "admin_cpd" &&
+          reservation.usuario_nome.toLowerCase().includes(search.toLowerCase()));
 
       const matchDate = date ? reservation.data === date : true;
 
@@ -78,6 +85,11 @@ export default function ReservationsPage() {
 
     setFilteredReservations(filtered);
   };
+
+  const placeholder =
+    user?.tipo === "admin_cpd"
+      ? "Buscar sala ou professor..."
+      : "Buscar sala...";
 
   return (
     <div className="w-full min-h-screen">
@@ -92,11 +104,7 @@ export default function ReservationsPage() {
           <div className="bg-white/10 backdrop-blur-md p-4 rounded-xl flex flex-col md:flex-row gap-4">
             <input
               type="text"
-              placeholder={
-                localStorage.getItem("userType") === "admin_cpd"
-                  ? "Buscar sala ou professor..."
-                  : "Buscar sala..."
-              }
+              placeholder={placeholder}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="flex-1 px-4 py-2 rounded-lg outline-none bg-white"
@@ -124,7 +132,7 @@ export default function ReservationsPage() {
           filteredReservations.map((reservation) => (
             <ReservationCard
               key={reservation.id}
-              reservation={reservation} 
+              reservation={reservation}
             />
           ))
         ) : (

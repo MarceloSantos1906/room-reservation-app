@@ -17,6 +17,7 @@ type Reservation = {
   bloco: string;
   nome_numero: string;
   usuario_nome: string;
+  usuario_id: string;
   criado_por_nome?: string;
   data: string;
   hora_inicio: string;
@@ -74,18 +75,13 @@ export default function ReservationCard({ reservation }: Props) {
     try {
       setLoading(true);
 
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("Usuário não autenticado");
-
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/reservas/${id}/cancelar`,
         {
           method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ cancelado_por: reservation.usuario_nome }),
+          headers: { "Content-Type": "application/json" },
+          credentials: "include", 
+          body: JSON.stringify({ cancelado_por: reservation.usuario_id }),
         }
       );
 
@@ -173,6 +169,7 @@ export default function ReservationCard({ reservation }: Props) {
           </button>
         </div>
       )}
+
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
           <div className="bg-white rounded-xl p-6 w-80 shadow-lg">
