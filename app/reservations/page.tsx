@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import ReservationCard from "./Cards/ReservationCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "react-toastify";
@@ -125,6 +126,13 @@ export default function ReservationsPage() {
               >
                 Buscar
               </button>
+
+              <Link
+                href="/admin/reservation"
+                className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-xl transition text-center"
+              >
+                Nova reserva
+              </Link>
             </div>
           </div>
         </div>

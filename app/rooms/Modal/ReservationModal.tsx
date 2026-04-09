@@ -35,6 +35,14 @@ export default function ReservationModal({
 
   const isAdmin = user?.tipo === "admin_cpd";
 
+  const today = new Date().toISOString().split("T")[0];
+  const lastDayOfMonth = (() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth() + 1, 0)
+      .toISOString()
+      .split("T")[0];
+  })();
+
   useEffect(() => {
     const fetchUsers = async () => {
       if (!isAdmin) return;
@@ -85,6 +93,16 @@ export default function ReservationModal({
 
     if (isAdmin && !selectedUserId) {
       toast.warning("Selecione um professor.");
+      return;
+    }
+
+    if (date < today) {
+      toast.warning("Não é possível reservar em datas passadas.");
+      return;
+    }
+
+    if (!isAdmin && date > lastDayOfMonth) {
+      toast.warning("Professores só podem reservar dentro do mês corrente.");
       return;
     }
 
@@ -199,6 +217,8 @@ export default function ReservationModal({
               <input
                 type="date"
                 value={date}
+                min={today}
+                max={!isAdmin ? lastDayOfMonth : undefined}
                 onChange={(e) => setDate(e.target.value)}
                 className="w-full border rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500"
               />
