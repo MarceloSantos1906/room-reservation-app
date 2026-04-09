@@ -59,7 +59,6 @@ export default function AdminReservationPanel() {
   const [date, setDate] = useState("");
   const [turno, setTurno] = useState("matutino");
   const [lessonNumber, setLessonNumber] = useState(1);
-  const [observation, setObservation] = useState("");
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -99,7 +98,6 @@ export default function AdminReservationPanel() {
     setDate("");
     setTurno("matutino");
     setLessonNumber(1);
-    setObservation("");
     setEditingId(null);
   };
 
@@ -138,7 +136,6 @@ export default function AdminReservationPanel() {
         data: date,
         turno,
         aula_numero: lessonNumber,
-        motivo: observation ? `${subject} - ${observation}` : subject,
       };
 
       const url = editingId
@@ -185,7 +182,6 @@ export default function AdminReservationPanel() {
     const [subjectName, ...obs] = reservation.motivo.split(" - ");
 
     setSubject(subjectName);
-    setObservation(obs.join(" - "));
     setSelectedRoomId(reservation.sala_id);
     setSelectedUserId(reservation.usuario_id);
     setDate(reservation.data.slice(0, 10));
@@ -389,19 +385,6 @@ export default function AdminReservationPanel() {
                     max={6}
                     value={lessonNumber}
                     onChange={(e) => setLessonNumber(Number(e.target.value))}
-                    className="w-full border rounded-xl px-4 py-3"
-                  />
-                </div>
-
-                <div>
-                  <label className="flex items-center gap-2 mb-2 font-medium text-gray-700">
-                    <FileText size={18} />
-                    Observação
-                  </label>
-                  <textarea
-                    value={observation}
-                    onChange={(e) => setObservation(e.target.value)}
-                    rows={3}
                     className="w-full border rounded-xl px-4 py-3"
                   />
                 </div>
