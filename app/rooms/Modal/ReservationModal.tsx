@@ -62,12 +62,6 @@ export default function ReservationModal({
       .toISOString()
       .split("T")[0];
   })();
-  const twoMonthsFromNow = (() => {
-    const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth() + 3, 0)
-      .toISOString()
-      .split("T")[0];
-  })();
 
   useEffect(() => {
     const fetchHorarios = async () => {
@@ -213,10 +207,6 @@ export default function ReservationModal({
       return;
     }
 
-    if (isAdmin && date > twoMonthsFromNow) {
-      toast.warning("Administradores podem reservar com no máximo 2 meses de antecedência.");
-      return;
-    }
 
     if (selectedLessons.length === 0) {
       toast.warning("Selecione pelo menos um horário.");
@@ -334,7 +324,7 @@ export default function ReservationModal({
               type="date"
               value={date}
               min={today}
-              max={isAdmin ? twoMonthsFromNow : lastDayOfMonth}
+              max={isAdmin ? undefined : lastDayOfMonth}
               onChange={(e) => setDate(e.target.value)}
               className="w-full border rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500"
             />
