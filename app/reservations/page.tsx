@@ -21,6 +21,43 @@ type Reservation = {
   status: string;
 };
 
+// Converts any date string from the API to a local YYYY-MM-DD string,
+// avoiding UTC-vs-local offset issues when slicing raw timestamps.
+const toLocalDateStr = (dateStr: string): string => {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+  const d = new Date(dateStr);
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, "0"),
+    String(d.getDate()).padStart(2, "0"),
+  ].join("-");
+};
+
+const isActive = (status: string) => status === "ativa" || status === "aberta";
+const isCancelled = (status: string) =>
+  status === "cancelada" || status === "cancelado";
+
+const sortReservations = (list: Reservation[]): Reservation[] =>
+  [...list].sort((a, b) => {
+    const aActive = isActive(a.status);
+    const bActive = isActive(b.status);
+    const aCancelled = isCancelled(a.status);
+    const bCancelled = isCancelled(b.status);
+
+    // Cancelled always last
+    if (aCancelled !== bCancelled) return aCancelled ? 1 : -1;
+
+    // Among active: closest date first
+    if (aActive && bActive)
+      return new Date(a.data).getTime() - new Date(b.data).getTime();
+
+    // Among cancelled: most recent first
+    if (aCancelled && bCancelled)
+      return new Date(b.data).getTime() - new Date(a.data).getTime();
+
+    return 0;
+  });
+
 export default function ReservationsPage() {
   const { user } = useAuth();
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -56,7 +93,7 @@ export default function ReservationsPage() {
         nome_numero: reservation.nome_numero,
         usuario_nome: reservation.usuario_nome,
         usuario_id: reservation.usuario_id,
-        data: reservation.data.slice(0, 10),
+        data: toLocalDateStr(reservation.data),
         hora_inicio: reservation.hora_inicio,
         hora_fim: reservation.hora_fim,
         turno: reservation.turno,
@@ -89,21 +126,19 @@ export default function ReservationsPage() {
     setFilteredReservations(filtered);
   };
 
-  const displayedReservations = filteredReservations.filter((r) => {
-    if (statusFilter === "todas") return true;
-    if (statusFilter === "cancelada")
-      return r.status === "cancelada" || r.status === "cancelado";
-    return r.status === "ativa" || r.status === "aberta";
-  });
+  const displayedReservations = (() => {
+    const filtered = filteredReservations.filter((r) => {
+      if (statusFilter === "todas") return true;
+      if (statusFilter === "cancelada") return isCancelled(r.status);
+      return isActive(r.status);
+    });
+    return statusFilter === "todas" ? sortReservations(filtered) : filtered;
+  })();
 
   const statusCounts = {
     todas: filteredReservations.length,
-    ativa: filteredReservations.filter(
-      (r) => r.status === "ativa" || r.status === "aberta"
-    ).length,
-    cancelada: filteredReservations.filter(
-      (r) => r.status === "cancelada" || r.status === "cancelado"
-    ).length,
+    ativa: filteredReservations.filter((r) => isActive(r.status)).length,
+    cancelada: filteredReservations.filter((r) => isCancelled(r.status)).length,
   };
 
   const placeholder =
