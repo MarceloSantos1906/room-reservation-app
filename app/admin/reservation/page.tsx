@@ -1,17 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   User,
   BookOpen,
   CalendarDays,
   Clock3,
-  Check,
   X,
   Edit,
   List,
   Plus,
-  Save
+  Save,
+  ChevronDown,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import Image from "next/image";
@@ -44,6 +44,13 @@ type Reservation = {
   status?: string;
 };
 
+type SlotInfo = {
+  hora_inicio: string;
+  hora_fim: string;
+};
+
+type HorariosResponse = Record<string, Record<string, SlotInfo>>;
+
 export default function AdminReservationPanel() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [users, setUsers] = useState<UserType[]>([]);
@@ -55,9 +62,22 @@ export default function AdminReservationPanel() {
   const [subject, setSubject] = useState("");
   const [date, setDate] = useState("");
   const [turno, setTurno] = useState("matutino");
-  const [lessonNumber, setLessonNumber] = useState(1);
+  const [selectedLessons, setSelectedLessons] = useState<number[]>([]);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [horarios, setHorarios] = useState<HorariosResponse>({});
+  const [takenSlots, setTakenSlots] = useState<number[]>([]);
   const [loading, setLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const today = new Date().toISOString().split("T")[0];
+  const twoMonthsFromNow = (() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth() + 3, 0)
+      .toISOString()
+      .split("T")[0];
+  })();
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -88,13 +108,57 @@ export default function AdminReservationPanel() {
     fetchInitialData();
   }, []);
 
+  useEffect(() => {
+    const fetchHorarios = async () => {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/reservas/horarios`,
+          { credentials: "include" }
+        );
+        if (res.ok) setHorarios(await res.json());
+      } catch (error) {
+        console.error("Erro ao buscar horários:", error);
+      }
+    };
+    fetchHorarios();
+  }, []);
+
+  useEffect(() => {
+    setSelectedLessons([]);
+    setTakenSlots([]);
+    if (!date || !selectedRoomId) return;
+
+    const taken = reservations
+      .filter(
+        (r) =>
+          r.sala_id === selectedRoomId &&
+          r.data.slice(0, 10) === date &&
+          r.turno === turno &&
+          r.status !== "cancelada" &&
+          r.id !== editingId
+      )
+      .map((r) => r.aula_numero);
+
+    setTakenSlots(taken);
+  }, [date, turno, selectedRoomId, reservations, editingId]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const resetForm = () => {
     setSelectedRoomId("");
     setSelectedUserId(users[0]?.id || "");
     setSubject("");
     setDate("");
     setTurno("matutino");
-    setLessonNumber(1);
+    setSelectedLessons([]);
     setEditingId(null);
   };
 
@@ -104,19 +168,18 @@ export default function AdminReservationPanel() {
       return;
     }
 
-    const conflict = reservations.find(
-      (r) =>
-        r.sala_id === selectedRoomId &&
-        r.data.slice(0, 10) === date &&
-        r.turno === turno &&
-        r.aula_numero === lessonNumber &&
-        r.id !== editingId
-    );
+    if (selectedLessons.length === 0) {
+      toast.warning("Selecione pelo menos um horário.");
+      return;
+    }
 
-    if (conflict) {
-      toast.error(
-        `Conflito! Sala já reservada para aula ${lessonNumber} no turno ${turno}.`
-      );
+    if (date < today) {
+      toast.warning("Não é possível reservar em datas passadas.");
+      return;
+    }
+
+    if (date > twoMonthsFromNow) {
+      toast.warning("Administradores podem reservar com no máximo 2 meses de antecedência.");
       return;
     }
 
@@ -124,42 +187,64 @@ export default function AdminReservationPanel() {
     toast.info("Salvando reserva...", { autoClose: 1000 });
 
     try {
-      const payload = {
-        sala_id: selectedRoomId,
-        usuario_id: selectedUserId,
-        data: date,
-        turno,
-        aula_numero: lessonNumber,
-        disciplina: subject
-      };
-
-      const url = editingId
-        ? `${process.env.NEXT_PUBLIC_API_URL}/api/reservas/${editingId}`
-        : `${process.env.NEXT_PUBLIC_API_URL}/api/reservas`;
-
-      const method = editingId ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        credentials: "include", 
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result?.message || "Erro ao salvar reserva");
-      }
-
-      toast.success(editingId ? "Reserva atualizada!" : "Reserva criada!");
+      const sorted = [...selectedLessons].sort((a, b) => a - b);
 
       if (editingId) {
-        setReservations((prev) =>
-          prev.map((r) => (r.id === result.id ? result : r))
+        const payload = {
+          sala_id: selectedRoomId,
+          usuario_id: selectedUserId,
+          data: date,
+          turno,
+          aula_numero: sorted[0],
+          disciplina: subject,
+        };
+
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/reservas/${editingId}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+            credentials: "include",
+          }
         );
+
+        const result = await response.json();
+        if (!response.ok) throw new Error(result?.message || "Erro ao atualizar reserva");
+
+        toast.success("Reserva atualizada!");
+        setReservations((prev) => prev.map((r) => (r.id === result.id ? result : r)));
       } else {
-        setReservations((prev) => [...prev, result]);
+        const created: Reservation[] = [];
+
+        for (const aulaNumero of sorted) {
+          const payload = {
+            sala_id: selectedRoomId,
+            usuario_id: selectedUserId,
+            data: date,
+            turno,
+            aula_numero: aulaNumero,
+            disciplina: subject,
+          };
+
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/api/reservas`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+              credentials: "include",
+            }
+          );
+
+          const result = await response.json();
+          if (!response.ok) throw new Error(result?.message || `Erro ao criar reserva para aula ${aulaNumero}`);
+
+          created.push(result);
+        }
+
+        toast.success("Reserva criada!");
+        setReservations((prev) => [...prev, ...created]);
       }
 
       resetForm();
@@ -177,7 +262,7 @@ export default function AdminReservationPanel() {
     setSelectedUserId(reservation.usuario_id);
     setDate(reservation.data.slice(0, 10));
     setTurno(reservation.turno);
-    setLessonNumber(reservation.aula_numero);
+    setSelectedLessons([reservation.aula_numero]);
     setEditingId(reservation.id);
     setActiveTab("form");
 
@@ -350,6 +435,8 @@ export default function AdminReservationPanel() {
                   <input
                     type="date"
                     value={date}
+                    min={today}
+                    max={twoMonthsFromNow}
                     onChange={(e) => setDate(e.target.value)}
                     className="w-full border rounded-xl px-4 py-3 flex-1"
                   />
@@ -369,34 +456,88 @@ export default function AdminReservationPanel() {
                     <option value="noturno">Noturno</option>
                   </select>
                 </div>
-                <div className="flex-1 flex flex-col">
-                  <label className="flex items-center gap-2 mb-2 font-medium text-gray-700">
-                    <Check size={18} />
-                    Aula
-                  </label>
-                  <div className="flex h-full gap-1">
-                    <button
-                      type="button"
-                      onClick={() => setLessonNumber((prev) => Math.max(1, prev - 1))}
-                      className="flex-1 bg-gray-200 rounded-xl hover:bg-gray-300 flex items-center justify-center py-3 text-lg"
-                    >
-                      –
-                    </button>
-                    <input
-                      type="number"
-                      value={lessonNumber}
-                      readOnly
-                      className="flex-1 text-center border rounded-xl px-4 py-3 appearance-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setLessonNumber((prev) => Math.min(4, prev + 1))}
-                      className="flex-1 bg-gray-200 rounded-xl hover:bg-gray-300 flex items-center justify-center py-3 text-lg"
-                    >
-                      +
-                    </button>
-                  </div>
+              </div>
+
+              <div ref={dropdownRef}>
+                <label className="flex items-center gap-2 mb-2 font-medium text-gray-700">
+                  <Clock3 size={18} />
+                  Horários
+                </label>
+                <div
+                  className="w-full border rounded-xl px-3 py-2 min-h-[48px] flex flex-wrap gap-1 items-center cursor-pointer focus-within:ring-2 focus-within:ring-blue-500"
+                  onClick={() => setDropdownOpen((prev) => !prev)}
+                >
+                  {selectedLessons.length === 0 && (
+                    <span className="text-gray-400 text-sm select-none">
+                      {date && selectedRoomId ? "Selecione os horários..." : "Selecione sala e data primeiro"}
+                    </span>
+                  )}
+                  {selectedLessons
+                    .slice()
+                    .sort((a, b) => a - b)
+                    .map((num) => {
+                      const slotInfo = horarios[turno]?.[String(num)];
+                      if (!slotInfo) return null;
+                      const label = `${slotInfo.hora_inicio}-${slotInfo.hora_fim}`;
+                      return (
+                        <span
+                          key={num}
+                          className="flex items-center gap-1 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full"
+                        >
+                          {label}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedLessons((prev) => prev.filter((n) => n !== num));
+                            }}
+                            className="hover:text-blue-600"
+                          >
+                            <X size={12} />
+                          </button>
+                        </span>
+                      );
+                    })}
+                  <ChevronDown
+                    size={16}
+                    className={`ml-auto text-gray-400 shrink-0 transition-transform ${dropdownOpen ? "rotate-180" : ""}`}
+                  />
                 </div>
+
+                {dropdownOpen && horarios[turno] && (
+                  <div className="border border-gray-200 rounded-xl mt-1 shadow-lg bg-white overflow-hidden relative z-10">
+                    {Object.entries(horarios[turno]).map(([num, info]) => {
+                      const numero = Number(num);
+                      const isSelected = selectedLessons.includes(numero);
+                      const isTaken = takenSlots.includes(numero);
+                      const label = `${info.hora_inicio}-${info.hora_fim}`;
+                      return (
+                        <div
+                          key={num}
+                          onClick={() => {
+                            if (isTaken) return;
+                            setSelectedLessons((prev) =>
+                              prev.includes(numero)
+                                ? prev.filter((n) => n !== numero)
+                                : [...prev, numero]
+                            );
+                          }}
+                          className={`flex items-center justify-between px-4 py-2 text-sm transition-colors
+                            ${isTaken
+                              ? "bg-gray-50 text-gray-400 cursor-not-allowed"
+                              : isSelected
+                              ? "bg-blue-50 text-blue-700 font-medium cursor-pointer hover:bg-blue-100"
+                              : "text-gray-700 cursor-pointer hover:bg-blue-50"
+                            }`}
+                        >
+                          <span>{label}</span>
+                          {isTaken && <span className="text-xs text-red-400 font-medium">Ocupado</span>}
+                          {isSelected && !isTaken && <span className="text-blue-600 font-bold text-base leading-none">✓</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
               <button
                 onClick={handleSubmit}
