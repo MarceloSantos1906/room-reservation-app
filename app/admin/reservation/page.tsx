@@ -72,12 +72,6 @@ export default function AdminReservationPanel() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const today = new Date().toISOString().split("T")[0];
-  const twoMonthsFromNow = (() => {
-    const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth() + 3, 0)
-      .toISOString()
-      .split("T")[0];
-  })();
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -175,11 +169,6 @@ export default function AdminReservationPanel() {
 
     if (date < today) {
       toast.warning("Não é possível reservar em datas passadas.");
-      return;
-    }
-
-    if (date > twoMonthsFromNow) {
-      toast.warning("Administradores podem reservar com no máximo 2 meses de antecedência.");
       return;
     }
 
@@ -436,7 +425,6 @@ export default function AdminReservationPanel() {
                     type="date"
                     value={date}
                     min={today}
-                    max={twoMonthsFromNow}
                     onChange={(e) => setDate(e.target.value)}
                     className="w-full border rounded-xl px-4 py-3 flex-1"
                   />

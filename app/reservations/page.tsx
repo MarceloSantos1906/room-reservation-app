@@ -143,6 +143,7 @@ export default function ReservationsPage() {
               <ReservationCard
                 key={reservation.id}
                 reservation={reservation}
+                isAdmin={user?.tipo === "admin_cpd"}
               />
             ))
           ) : (

@@ -9,7 +9,9 @@ import {
   BadgeInfo,
   User,
   X,
+  Edit,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 
 type Reservation = {
@@ -30,9 +32,10 @@ type Reservation = {
 
 type Props = {
   reservation: Reservation;
+  isAdmin?: boolean;
 };
 
-export default function ReservationCard({ reservation }: Props) {
+export default function ReservationCard({ reservation, isAdmin }: Props) {
   const {
     id,
     bloco,
@@ -51,6 +54,7 @@ export default function ReservationCard({ reservation }: Props) {
   const [status, setStatus] = useState(initialStatus);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const router = useRouter();
 
   const statusStyles = {
     ativa: "bg-green-500 text-white",
@@ -159,7 +163,16 @@ export default function ReservationCard({ reservation }: Props) {
       </div>
 
       {status === "ativa" && (
-        <div className="mt-4 flex justify-end">
+        <div className="mt-4 flex gap-2 justify-end">
+          {isAdmin && (
+            <button
+              onClick={() => router.push(`/reservations/${id}/edit`)}
+              className="flex items-center gap-1 bg-yellow-400 hover:bg-yellow-500 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-colors duration-200"
+            >
+              <Edit size={14} />
+              Editar
+            </button>
+          )}
           <button
             onClick={() => setShowModal(true)}
             disabled={loading}
