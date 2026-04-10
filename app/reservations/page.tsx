@@ -21,17 +21,6 @@ type Reservation = {
   status: string;
 };
 
-// Converts any date string from the API to a local YYYY-MM-DD string,
-// avoiding UTC-vs-local offset issues when slicing raw timestamps.
-const toLocalDateStr = (dateStr: string): string => {
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
-  const d = new Date(dateStr);
-  return [
-    d.getFullYear(),
-    String(d.getMonth() + 1).padStart(2, "0"),
-    String(d.getDate()).padStart(2, "0"),
-  ].join("-");
-};
 
 const isActive = (status: string) => status === "ativa" || status === "aberta";
 const isCancelled = (status: string) =>
@@ -90,7 +79,7 @@ export default function ReservationsPage() {
         nome_numero: reservation.nome_numero,
         usuario_nome: reservation.usuario_nome,
         usuario_id: reservation.usuario_id,
-        data: toLocalDateStr(reservation.data),
+        data: reservation.data.slice(0, 10),
         hora_inicio: reservation.hora_inicio,
         hora_fim: reservation.hora_fim,
         turno: reservation.turno,
