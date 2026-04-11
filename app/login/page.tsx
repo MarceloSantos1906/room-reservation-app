@@ -31,7 +31,7 @@ export default function LoginPage() {
       setLoading(true);
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`,
+        "/api/auth/login",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -54,8 +54,9 @@ export default function LoginPage() {
       const redirectPath =
         data.usuario.tipo === "admin_cpd" ? "/admin" : "/rooms";
 
-      router.replace(redirectPath);
       toast.success("Login realizado com sucesso!");
+      router.replace(redirectPath);
+
     } catch (error) {
       console.error("Erro login:", error);
       toast.error("Erro ao fazer login");

@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-} from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 
 type User = {
   id: string;
@@ -16,51 +11,42 @@ type User = {
 type AuthContextType = {
   user: User | null;
   loading: boolean;
-  login: (userData: User) => void;
+  login: (user: User) => void;
   logout: () => Promise<void>;
 };
 
-const AuthContext = createContext<AuthContextType>(
-  {} as AuthContextType
-);
+const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
-export function AuthProvider({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadUser = async () => {
+    async function loadUser() {
       try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/auth/user`,
-          {
-            credentials: "include",
-          }
-        );
+        const res = await fetch("/api/auth/user", {
+          credentials: "include",
+        });
 
-        if (!response.ok) {
+        if (res.status === 401) {
           setUser(null);
           return;
         }
 
-        const data = await response.json();
+        const data = await res.json();
 
         setUser({
           id: data.id,
           tipo: data.tipo,
           nome: data.nome,
         });
-      } catch (error) {
-        console.error("Erro ao carregar usuário:", error);
+      } catch (err) {
+        console.error(err);
         setUser(null);
       } finally {
         setLoading(false);
       }
-    };
+    }
 
     loadUser();
   }, []);
@@ -70,33 +56,24 @@ export function AuthProvider({
   }
 
   async function logout() {
-    setLoading(true);
-
     try {
-      await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/logout`,
-        {
-          method: "POST",
-          credentials: "include",
-        }
-      );
-    } catch (error) {
-      console.error("Erro ao sair:", error);
-    } finally {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+
       setUser(null);
-      setLoading(false);
+      window.location.href = "/login";
+    } catch (err) {
+      console.error(err);
     }
   }
 
   return (
-    <AuthContext.Provider
-      value={{ user, loading, login, logout }}
-    >
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-export function useAuth() {
-  return useContext(AuthContext);
-}
+export const useAuth = () => useContext(AuthContext);

@@ -39,7 +39,9 @@ export default function RoomsPanel() {
   useEffect(() => {
     const fetchEquipments = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/equipamentos`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/equipamentos`, {
+          credentials: "include",
+        });
         const data = await res.json();
         setEquipments(data);
       } catch {
@@ -49,7 +51,9 @@ export default function RoomsPanel() {
 
     const fetchRooms = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/salas`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/salas`, {
+          credentials:"include",
+        });
         const data = await res.json();
         setRooms(data);
       } catch {

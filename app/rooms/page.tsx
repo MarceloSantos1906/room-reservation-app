@@ -47,7 +47,7 @@ export default function Rooms() {
     const fetchUser = async () => {
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/auth/user`,
+          "/api/auth/user",
           { credentials: "include" }
         );
 
@@ -61,7 +61,6 @@ export default function Rooms() {
           toast.warning("Você não está logado.");
         }
       } catch (error) {
-        console.error("Erro ao buscar usuário:", error);
         toast.error("Erro ao carregar informações do usuário.");
         setIsAdmin(false);
         setIsLoggedIn(false);
