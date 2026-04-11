@@ -49,8 +49,7 @@ export default function EditReservationPage() {
   const [selectedLesson, setSelectedLesson] = useState<number | null>(null);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const now = new Date();
-  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const today = new Date().toISOString().split("T")[0];
 
   // Redirect non-admins
   useEffect(() => {
@@ -160,6 +159,11 @@ export default function EditReservationPage() {
       return;
     }
 
+    if (date < today) {
+      toast.warning("Não é possível reservar em datas passadas.");
+      return;
+    }
+
     try {
       setLoading(true);
       toast.info("Salvando alterações...", { autoClose: 1000 });
@@ -185,7 +189,7 @@ export default function EditReservationPage() {
       const result = await response.json();
 
       if (!response.ok) {
-        toast.error(result?.error || result?.message || "Erro ao atualizar reserva.");
+        toast.error(result?.message || "Erro ao atualizar reserva.");
         return;
       }
 
