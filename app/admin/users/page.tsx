@@ -106,6 +106,19 @@ export default function UserPanel() {
       });
 
       if (!response.ok) {
+        if (response.status === 400) {
+          const json = await response.json();
+          if (json.error === "E-mail deve ser institucional (@uniuv.edu.br ou @unespar.edu.br)"){
+            toast.error("O email deve terminar em uniuv.edu.br ou unespar.edu.br");
+            return;
+          }
+        } else if (response.status === 500) {
+          const json = await response.json();
+          if (json.error === "Unable to validate email address: invalid format"){
+            toast.error("formato de endereço de email inválido");
+            return;
+          }
+        }
         toast.error("Erro ao salvar usuário");
         return;
       }
