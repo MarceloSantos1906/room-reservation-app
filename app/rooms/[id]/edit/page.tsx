@@ -41,7 +41,7 @@ export default function EditRoomPage() {
   useEffect(() => {
     const fetchRoom = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/salas/${id}`);
+        const res = await fetch(`/api/rooms/${id}`);
         const data = await res.json();
 
         setNomeNumero(data.nome_numero);
@@ -61,7 +61,7 @@ export default function EditRoomPage() {
   useEffect(() => {
     const fetchEquipments = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/equipamentos`);
+        const res = await fetch("/api/equipments");
         const data = await res.json();
         setAvailableEquipments(data || []);
       } catch (error) {
@@ -71,65 +71,10 @@ export default function EditRoomPage() {
     fetchEquipments();
   }, []);
 
-/*   const handleRemoveEquipment = async (equipmentId: string) => {
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/salas/${id}/equipamentos/${equipmentId}`,
-        { method: "DELETE" }
-      );
-
-      if (!res.ok) throw new Error("Erro ao remover equipamento");
-
-      setEquipamentos((prev) => prev.filter((item) => item.id !== equipmentId));
-    } catch (error) {
-      console.error(error);
-      alert("Erro ao remover equipamento");
-    }
-  };
-
-  const handleAddEquipment = async () => {
-    if (!selectedEquipmentId || quantity < 1) {
-      alert("Selecione um equipamento e quantidade válida");
-      return;
-    }
-
-    if (equipamentos.find((eq) => eq.id === selectedEquipmentId)) {
-      alert("Equipamento já adicionado");
-      return;
-    }
-
-    const added = availableEquipments.find((eq) => eq.id === selectedEquipmentId);
-    if (!added) return;
-
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/salas/${id}/equipamentos`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ equipamento_id: selectedEquipmentId, quantidade: quantity }),
-        }
-      );
-
-      if (!res.ok) throw new Error("Erro ao adicionar equipamento");
-
-      setEquipamentos((prev) => [
-        ...prev,
-        { id: added.id, nome: added.nome, quantidade: quantity },
-      ]);
-
-      setSelectedEquipmentId("");
-      setQuantity(1);
-    } catch (error) {
-      console.error(error);
-      alert("Erro ao adicionar equipamento");
-    }
-  }; */
-
   const handleUpdateRoom = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/salas/${id}`, {
+      const res = await fetch(`/api/rooms/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -147,7 +92,7 @@ export default function EditRoomPage() {
         try {
           if (change.type === 'add') {
             const res = await fetch(
-              `${process.env.NEXT_PUBLIC_API_URL}/api/salas/${id}/equipamentos`,
+              `/api/rooms/${id}/equipments`,
               {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -160,7 +105,7 @@ export default function EditRoomPage() {
             };
           } else if (change.type === 'remove') {
             const res = await fetch(
-              `${process.env.NEXT_PUBLIC_API_URL}/api/salas/${id}/equipamentos/${change.equipamentId}`,
+              `/api/rooms/${id}/equipments/${change.equipamentId}`,
               { method: "DELETE" }
             );
             if (!res.ok) {
