@@ -80,7 +80,7 @@ export default function ReservationCard({ reservation, isAdmin }: Props) {
       setLoading(true);
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/reservas/${id}/cancelar`,
+        `/api/reservations/${id}/cancel`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
