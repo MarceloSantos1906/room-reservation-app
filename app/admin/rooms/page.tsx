@@ -290,7 +290,10 @@ export default function RoomsPanel() {
                     <Monitor size={16} /> Equipamentos
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-72 overflow-y-auto pr-2">
-                    {equipments.map((item) => (
+                    {
+                    equipments
+                    .filter((item) => !(item.nome === "Computadores" && type === "laboratorio"))
+                    .map((item) => (
                       <label
                         key={item.id}
                         className={`flex items-center gap-3 border rounded-xl px-4 py-3 cursor-pointer transition ${
