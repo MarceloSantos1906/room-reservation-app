@@ -51,14 +51,12 @@ export default function EditReservationPage() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const today = new Date().toISOString().split("T")[0];
 
-  // Redirect non-admins
   useEffect(() => {
     if (user && user.tipo !== "admin_cpd") {
       router.replace("/reservations");
     }
   }, [user, router]);
 
-  // Load reservation + rooms + horarios in parallel
   useEffect(() => {
     if (!id) return;
 
@@ -100,7 +98,6 @@ export default function EditReservationPage() {
     load();
   }, [id, router]);
 
-  // Recompute taken slots when date/turno/sala changes
   useEffect(() => {
     setTakenSlots([]);
     if (!date || !salaId) return;
@@ -123,7 +120,6 @@ export default function EditReservationPage() {
           .map((r) => r.aula_numero);
 
         setTakenSlots(taken);
-        // If current selection became taken, clear it
         setSelectedLesson((prev) => (prev !== null && taken.includes(prev) ? null : prev));
       } catch (error) {
         console.error(error);
@@ -133,7 +129,6 @@ export default function EditReservationPage() {
     fetchTaken();
   }, [date, turno, salaId, id]);
 
-  // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -324,7 +319,7 @@ export default function EditReservationPage() {
                 Horário
               </label>
               <div
-                className="w-full border rounded-xl px-3 py-3 min-h-[48px] flex items-center cursor-pointer focus-within:ring-2 focus-within:ring-blue-500"
+                className="w-full border rounded-xl px-3 py-3 min-h-12 flex items-center cursor-pointer focus-within:ring-2 focus-within:ring-blue-500"
                 onClick={() => setDropdownOpen((prev) => !prev)}
               >
                 {selectedSlot ? (

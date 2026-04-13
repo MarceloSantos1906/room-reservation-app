@@ -183,7 +183,7 @@ export default function AdminReservationPanel() {
           sala_id: selectedRoomId,
           usuario_id: selectedUserId,
           data: date,
-          turno:selectedShift,
+          turno: selectedShift,
           aula_numero: sorted[0],
           disciplina: subject,
         };
@@ -283,7 +283,7 @@ export default function AdminReservationPanel() {
                       method: "PATCH",
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({ cancelado_por: reservation.usuario_id }),
-                      credentials: "include", 
+                      credentials: "include",
                     }
                   );
 
@@ -306,7 +306,7 @@ export default function AdminReservationPanel() {
           </div>
         </div>
       ),
-      { 
+      {
         autoClose: false,
         position: "top-center",
       }
@@ -319,24 +319,24 @@ export default function AdminReservationPanel() {
     noturno: "bg-indigo-200 text-indigo-700",
   };
 
+  const selectInputClass = "w-full appearance-none rounded-xl border border-gray-300 bg-white px-4 py-3 pr-12 text-gray-700 shadow-sm outline-none transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 hover:border-blue-400";
+
   return (
     <div className="min-h-screen pt-24 bg-linear-to-br from-blue-900 via-blue-700 to-teal-500 px-4 sm:px-6 py-8 sm:py-10">
       <div className="max-w-5xl mx-auto space-y-10">
         <div className="flex justify-center gap-4">
           <button
             onClick={() => setActiveTab("form")}
-            className={`flex items-center gap-2 px-5 py-2 rounded-xl font-semibold transition ${
-              activeTab === "form" ? "bg-blue-700 text-white" : "bg-white text-blue-700"
-            }`}
+            className={`flex items-center gap-2 px-5 py-2 rounded-xl font-semibold transition ${activeTab === "form" ? "bg-blue-700 text-white" : "bg-white text-blue-700"
+              }`}
           >
             <Plus size={16} /> Cadastro
           </button>
 
           <button
             onClick={() => setActiveTab("list")}
-            className={`flex items-center gap-2 px-5 py-2 rounded-xl font-semibold transition ${
-              activeTab === "list" ? "bg-blue-700 text-white" : "bg-white text-blue-700"
-            }`}
+            className={`flex items-center gap-2 px-5 py-2 rounded-xl font-semibold transition ${activeTab === "list" ? "bg-blue-700 text-white" : "bg-white text-blue-700"
+              }`}
           >
             <List size={16} /> Lista
           </button>
@@ -360,47 +360,58 @@ export default function AdminReservationPanel() {
             <p className="text-gray-500 text-center mb-6">
               Preencha os dados abaixo para reservar a sala de forma rápida e organizada.
             </p>
-
             <div className="grid grid-cols-1 gap-5">
               <div>
                 <label className="flex items-center gap-2 mb-2 font-medium text-gray-700">
                   <BookOpen size={18} />
                   Sala
                 </label>
-                <select
-                  value={selectedRoomId}
-                  onChange={(e) => setSelectedRoomId(e.target.value)}
-                  className="w-full border rounded-xl px-4 py-3"
-                >
-                  <option value="" disabled>
-                    Selecione uma sala
-                  </option>
-                  {rooms.map((room) => (
-                    <option key={room.id} value={room.id}>
-                      {room.nome_numero} - {room.bloco}
+                <div className="relative">
+                  <select
+                    value={selectedRoomId}
+                    onChange={(e) => setSelectedRoomId(e.target.value)}
+                    className={selectInputClass}
+                  >
+                    <option value="" disabled>
+                      Selecione uma sala
                     </option>
-                  ))}
-                </select>
+                    {rooms.map((room) => (
+                      <option key={room.id} value={room.id}>
+                        {room.nome_numero} - {room.bloco}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={18}
+                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-blue-500"
+                  />
+                </div>
               </div>
               <div>
                 <label className="flex items-center gap-2 mb-2 font-medium text-gray-700">
                   <User size={18} />
                   Professor(a)
                 </label>
-                <select
-                  value={selectedUserId}
-                  onChange={(e) => setSelectedUserId(e.target.value)}
-                  className="w-full border rounded-xl px-4 py-3"
-                >
-                  <option value="" disabled>
-                    Selecione um(a) professor(a)
-                  </option>
-                  {users.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.nome}
+                <div className="relative">
+                  <select
+                    value={selectedUserId}
+                    onChange={(e) => setSelectedUserId(e.target.value)}
+                    className={selectInputClass}
+                  >
+                    <option value="" disabled>
+                      Selecione um(a) professor(a)
                     </option>
-                  ))}
-                </select>
+                    {users.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.nome}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={18}
+                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-blue-500"
+                  />
+                </div>
               </div>
               <div>
                 <label className="flex items-center gap-2 mb-2 font-medium text-gray-700">
@@ -411,7 +422,7 @@ export default function AdminReservationPanel() {
                   type="text"
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
-                  className="w-full border rounded-xl px-4 py-3"
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none"
                   placeholder="Ex: Computação I"
                 />
               </div>
@@ -426,69 +437,90 @@ export default function AdminReservationPanel() {
                     value={date}
                     min={today}
                     onChange={(e) => setDate(e.target.value)}
-                    className="w-full border rounded-xl px-4 py-3 flex-1"
+                    className="w-full border border-gray-300 rounded-xl px-4 py-3 flex-1 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none"
                   />
                 </div>
+
                 <div className="flex-1 flex flex-col">
                   <label className="flex items-center gap-2 mb-2 font-medium text-gray-700">
                     <Clock3 size={18} />
                     Turno
                   </label>
-                  <select
-                    value={selectedShift}
-                    onChange={(e) => setSelectedShift(e.target.value)}
-                    className="w-full border rounded-xl px-4 py-3 flex-1"
-                  >
-                    <option value="matutino">Matutino</option>
-                    <option value="vespertino">Vespertino</option>
-                    <option value="noturno">Noturno</option>
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={selectedShift}
+                      onChange={(e) => setSelectedShift(e.target.value)}
+                      className={selectInputClass}
+                    >
+                      <option value="matutino">Matutino</option>
+                      <option value="vespertino">Vespertino</option>
+                      <option value="noturno">Noturno</option>
+                    </select>
+                    <ChevronDown
+                      size={18}
+                      className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-blue-500"
+                    />
+                  </div>
                 </div>
               </div>
-
               <div ref={dropdownRef}>
                 <label className="flex items-center gap-2 mb-2 font-medium text-gray-700">
                   <Clock3 size={18} />
                   Horários
                 </label>
+
                 <div
-                  className="w-full border rounded-xl px-3 py-2 min-h-12 flex flex-wrap gap-1 items-center cursor-pointer focus-within:ring-2 focus-within:ring-blue-500"
+                  className="relative"
                   onClick={() => setDropdownOpen((prev) => !prev)}
                 >
-                  {selectedLessons.length === 0 && (
-                    <span className="text-gray-400 text-sm select-none">
-                      {date && selectedRoomId ? "Selecione os horários..." : "Selecione sala e data primeiro"}
-                    </span>
-                  )}
-                  {selectedLessons
-                    .slice()
-                    .sort((a, b) => a - b)
-                    .map((num) => {
-                      const slotInfo = timeSlots[selectedShift]?.[String(num)];
-                      if (!slotInfo) return null;
-                      const label = `${slotInfo.hora_inicio}-${slotInfo.hora_fim}`;
-                      return (
-                        <span
-                          key={num}
-                          className="flex items-center gap-1 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full"
-                        >
-                          {label}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedLessons((prev) => prev.filter((n) => n !== num));
-                            }}
-                            className="hover:text-blue-600"
+                  <div
+                    className={`${selectInputClass} min-h-12 flex flex-wrap gap-1 items-center cursor-pointer`}
+                  >
+                    {selectedLessons.length === 0 && (
+                      <span className="text-gray-400 text-sm select-none">
+                        {date && selectedRoomId
+                          ? "Selecione os horários..."
+                          : "Selecione sala e data primeiro"}
+                      </span>
+                    )}
+
+                    {selectedLessons
+                      .slice()
+                      .sort((a, b) => a - b)
+                      .map((num) => {
+                        const slotInfo = timeSlots[selectedShift]?.[String(num)];
+                        if (!slotInfo) return null;
+
+                        const label = `${slotInfo.hora_inicio}-${slotInfo.hora_fim}`;
+
+                        return (
+                          <span
+                            key={num}
+                            className="flex items-center gap-1 bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full"
                           >
-                            <X size={12} />
-                          </button>
-                        </span>
-                      );
-                    })}
+                            {label}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedLessons((prev) =>
+                                  prev.filter((n) => n !== num)
+                                );
+                              }}
+                              className="hover:text-blue-600"
+                            >
+                              <X size={12} />
+                            </button>
+                          </span>
+                        );
+                      })}
+                  </div>
+
                   <ChevronDown
-                    size={16}
-                    className={`ml-auto text-gray-400 shrink-0 transition-transform ${dropdownOpen ? "rotate-180" : ""}`}
+                    size={18}
+                    strokeWidth={2.4}
+                    className={`pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-blue-500 transition-all duration-300 ${dropdownOpen ? "rotate-180" : ""
+                      }`}
                   />
                 </div>
 
@@ -499,11 +531,13 @@ export default function AdminReservationPanel() {
                       const isSelected = selectedLessons.includes(numero);
                       const isTaken = takenSlots.includes(numero);
                       const label = `${info.hora_inicio}-${info.hora_fim}`;
+
                       return (
                         <div
                           key={num}
                           onClick={() => {
                             if (isTaken) return;
+
                             setSelectedLessons((prev) =>
                               prev.includes(numero)
                                 ? prev.filter((n) => n !== numero)
@@ -511,16 +545,26 @@ export default function AdminReservationPanel() {
                             );
                           }}
                           className={`flex items-center justify-between px-4 py-2 text-sm transition-colors
-                            ${isTaken
+              ${isTaken
                               ? "bg-gray-50 text-gray-400 cursor-not-allowed"
                               : isSelected
-                              ? "bg-blue-50 text-blue-700 font-medium cursor-pointer hover:bg-blue-100"
-                              : "text-gray-700 cursor-pointer hover:bg-blue-50"
+                                ? "bg-blue-50 text-blue-700 font-medium cursor-pointer hover:bg-blue-100"
+                                : "text-gray-700 cursor-pointer hover:bg-blue-50"
                             }`}
                         >
                           <span>{label}</span>
-                          {isTaken && <span className="text-xs text-red-400 font-medium">Ocupado</span>}
-                          {isSelected && !isTaken && <span className="text-blue-600 font-bold text-base leading-none">✓</span>}
+
+                          {isTaken && (
+                            <span className="text-xs text-red-400 font-medium">
+                              Ocupado
+                            </span>
+                          )}
+
+                          {isSelected && !isTaken && (
+                            <span className="text-blue-600 font-bold text-base leading-none">
+                              ✓
+                            </span>
+                          )}
                         </div>
                       );
                     })}
@@ -575,9 +619,8 @@ export default function AdminReservationPanel() {
                           </div>
 
                           <span
-                            className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                              turnoColors[r.turno as keyof typeof turnoColors] || "bg-gray-100 text-gray-700"
-                            }`}
+                            className={`px-3 py-1 rounded-full text-xs font-semibold ${turnoColors[r.turno as keyof typeof turnoColors] || "bg-gray-100 text-gray-700"
+                              }`}
                           >
                             {r.turno}
                           </span>
@@ -634,11 +677,10 @@ export default function AdminReservationPanel() {
 
                         <button
                           disabled={r.status === "cancelada"}
-                          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl font-semibold transition ${
-                            r.status === "cancelada"
-                              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                              : "bg-red-100 text-red-700 hover:bg-red-200"
-                          }`}
+                          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl font-semibold transition ${r.status === "cancelada"
+                            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                            : "bg-red-100 text-red-700 hover:bg-red-200"
+                            }`}
                           onClick={() => confirmDelete(r)}
                         >
                           <X size={16} />
