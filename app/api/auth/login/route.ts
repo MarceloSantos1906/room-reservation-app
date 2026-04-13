@@ -12,16 +12,23 @@ export async function POST(request: NextRequest) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(body),
-        credentials: "include",
       }
     );
 
     const data = await backendResponse.json();
+    console.log("LOGIN BACKEND RESPONSE:", data);
 
     if (!backendResponse.ok) {
       return NextResponse.json(
-        { message: "Email ou senha inválidos" },
+        { message: data?.message || "Email ou senha inválidos" },
         { status: backendResponse.status }
+      );
+    }
+
+    if (!data?.token) {
+      return NextResponse.json(
+        { message: "Token não retornado pelo backend" },
+        { status: 500 }
       );
     }
 
