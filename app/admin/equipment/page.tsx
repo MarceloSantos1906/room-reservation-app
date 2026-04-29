@@ -63,7 +63,7 @@ export default function EquipmentPanel() {
 
       if (!response.ok) {
         const data = await response.json().catch(() => null);
-        if (data?.message) toast.error(data.message);
+        if (data?.error) toast.error(data.error);
         else if (data?.errors?.nome) toast.error(data.errors.nome);
         else toast.error("Erro ao salvar equipamento");
         return;
